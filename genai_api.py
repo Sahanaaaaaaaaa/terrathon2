@@ -1,233 +1,240 @@
 import os
-import pandas as pd
-import google.generativeai as genai
-from dotenv import load_dotenv
+import json
+import random
+from typing import Dict, List, Any, Optional
 
-load_dotenv()  # Load environment variables from .env file
+# Try to import Google Generative AI
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
+    print("Warning: google.generativeai module not available. Install with: pip install google-generativeai")
 
-# Set up Gemini API key
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Set up Google Gemini API key
+# Get your API key from https://ai.google.dev/
+api_key = os.environ.get('GEMINI_API_KEY', '')
+if not api_key:
+    print("WARNING: GEMINI_API_KEY environment variable not set")
+    print("Set it using: export GEMINI_API_KEY='your-api-key-here'")
 
-# List available models to see correct model name
-for model in genai.list_models():
-    if "gemini" in model.name.lower():
-        print(f"Found Gemini model: {model.name}")
+# Configure the Gemini API
+if api_key and GENAI_AVAILABLE:
+    genai.configure(api_key=api_key)
+    # List available models
+    try:
+        for m in genai.list_models():
+            if 'gemini' in m.name:
+                print(f"Found Gemini model: {m.name}")
+    except Exception as e:
+        print(f"Error listing Gemini models: {e}")
 
-class CarbonFootprintGenAI:
-    def __init__(self):
-        # Load datasets
-        self.product_data = pd.read_csv('data_with_cf_scores.csv')
-        
-        # Create user purchase history dict
-        self.user_purchase_history = self.build_user_history()
+class GeminiInsightsGenerator:
+    """Class to generate personalized sustainability insights using Google's Gemini API"""
     
-    def build_user_history(self):
-        """Build a dictionary of user purchase history"""
-        user_history = {}
+    def __init__(self, model_name="gemini-1.5-flash"):
+        """Initialize the Gemini insights generator with a specific model"""
+        self.model_name = model_name
+        self.api_key = api_key
+        self.genai_available = GENAI_AVAILABLE
         
-        for _, row in self.product_data.iterrows():
-            user_id = row['user_id']
-            
-            if user_id not in user_history:
-                user_history[user_id] = []
-            
-            user_history[user_id].append({
-                'product_id': row['product_id'],
-                'category_code': row['category_code'],
-                'brand': row['brand'],
-                'price': row['price'],
-                'cf_score': row['cf_score'],
-                'cf_category': row['cf_category']
-            })
-        
-        return user_history
+        # Mock data for user - in a real application, this would come from a database
+        self.mock_user_data = {
+            "user123": {
+                "purchase_history": [
+                    {"brand": "apple", "product": "iphone", "cf_score": 75},
+                    {"brand": "samsung", "product": "tv", "cf_score": 65},
+                    {"brand": "dell", "product": "laptop", "cf_score": 60}
+                ],
+                "cf_score": 68,
+                "cf_category": "Medium CF",
+                "preferences": ["electronics", "gadgets", "home appliances"]
+            },
+            "user456": {
+                "purchase_history": [
+                    {"brand": "bosch", "product": "refrigerator", "cf_score": 45},
+                    {"brand": "dell", "product": "monitor", "cf_score": 40},
+                    {"brand": "bequiet", "product": "power supply", "cf_score": 30}
+                ],
+                "cf_score": 38,
+                "cf_category": "Low CF",
+                "preferences": ["electronics", "sustainable brands"]
+            }
+        }
     
-    def get_user_cf_score(self, user_id):
-        """Calculate average CF score for a user based on purchase history"""
-        if user_id not in self.user_purchase_history:
-            return None, None
-        
-        purchases = self.user_purchase_history[user_id]
-        if not purchases:
-            return None, None
-        
-        total_cf = sum(item['cf_score'] for item in purchases)
-        avg_cf = total_cf / len(purchases)
-        
-        # Determine user's CF category
-        if avg_cf >= 70:
-            category = "High CF"
-        elif avg_cf >= 40:
-            category = "Medium CF"
-        else:
-            category = "Low CF"
-        
-        return avg_cf, category
-    
-    def find_similar_products_with_lower_cf(self, category_code, brand, max_price=None):
-        """Find similar products with lower CF scores"""
-        # Filter products by category
-        category_products = self.product_data[self.product_data['category_code'] == category_code]
-        
-        # Sort by CF score (ascending)
-        sorted_products = category_products.sort_values('cf_score')
-        
-        # Filter by price if specified
-        if max_price is not None:
-            sorted_products = sorted_products[sorted_products['price'] <= max_price]
-        
-        # Get top 3 products with lowest CF
-        recommendations = sorted_products.head(3)
-        
-        return recommendations[['product_id', 'brand', 'price', 'cf_score', 'cf_category']].to_dict('records')
-    
-    def find_alternative_brands(self, category_code, current_brand):
-        """Find alternative brands with lower average CF for the same category"""
-        # Filter products by category
-        category_products = self.product_data[self.product_data['category_code'] == category_code]
-        
-        # Group by brand and calculate average CF score
-        brand_cf = category_products.groupby('brand')['cf_score'].mean().reset_index()
-        
-        # Sort by average CF score (ascending)
-        sorted_brands = brand_cf.sort_values('cf_score')
-        
-        # Remove current brand
-        alternative_brands = sorted_brands[sorted_brands['brand'] != current_brand]
-        
-        return alternative_brands.head(3).to_dict('records')
-    
-    def generate_recommendations(self, user_id, product_id, brand, purchase_time):
-        """Generate recommendations using Gemini API based on user data"""
-        # Get user's CF score and category
-        user_cf_score, user_cf_category = self.get_user_cf_score(user_id)
-        
-        if not user_cf_score:
-            user_cf_score = "Unknown"
-            user_cf_category = "Unknown"
-        
-        # Find the product category
-        product_info = self.product_data[self.product_data['product_id'] == product_id]
-        if product_info.empty:
-            product_category = "Unknown"
-        else:
-            product_category = product_info.iloc[0]['category_code']
-        
-        # Find alternative products with lower CF
-        alt_products = self.find_similar_products_with_lower_cf(product_category, brand)
-        
-        # Find alternative brands with lower CF
-        alt_brands = self.find_alternative_brands(product_category, brand)
-        
-        # Generate the prompt for Gemini
-        prompt = f"""
-        You are a sustainability advisor helping a user make environmentally conscious purchasing decisions.
-        
-        User Information:
-        - User ID: {user_id}
-        - Average Carbon Footprint (CF) Score: {user_cf_score}
-        - CF Category: {user_cf_category}
-        
-        Current Product Information:
-        - Product ID: {product_id}
-        - Brand: {brand}
-        - Category: {product_category}
-        
-        Alternative Products with Lower CF Scores:
-        {self._format_alt_products(alt_products)}
-        
-        Alternative Brands with Lower Average CF in this Category:
-        {self._format_alt_brands(alt_brands)}
-        
-        Please provide the following in your response:
-        1. The user's CF score and category based on their purchase history
-        2. Which CF category the current product and brand belongs to
-        3. Specific recommendations for alternative products or brands that would help reduce the user's carbon footprint
-        4. Sustainability tips related to this product category
-        """
+    def get_model(self):
+        """Get the Gemini model"""
+        if not self.api_key or not self.genai_available:
+            return None
         
         try:
-            # Call Gemini API
-            model = genai.GenerativeModel('gemini-1.5-pro')
-            response = model.generate_content(prompt)
-            return response.text
+            # For text-only input
+            return genai.GenerativeModel(self.model_name)
         except Exception as e:
-            # Fallback to local generation if API fails
-            print(f"Error using Gemini API: {e}")
-            return self._generate_fallback_recommendation(user_id, user_cf_score, user_cf_category, 
-                                                        product_id, brand, product_category,
-                                                        alt_products, alt_brands)
+            print(f"Error loading Gemini model: {e}")
+            return None
     
-    def _generate_fallback_recommendation(self, user_id, user_cf_score, user_cf_category, 
-                                        product_id, brand, product_category,
-                                        alt_products, alt_brands):
-        """Generate a fallback recommendation if the API fails"""
-        alt_product_text = "No alternative products found."
-        if alt_products:
-            best_alt = alt_products[0]
-            alt_product_text = f"Consider {best_alt['brand']} (Product ID: {best_alt['product_id']}) " \
-                              f"with a CF score of {best_alt['cf_score']} instead of your current choice."
-        
-        alt_brand_text = "No alternative brands found."
-        if alt_brands:
-            best_brand = alt_brands[0]
-            alt_brand_text = f"Consider switching to {best_brand['brand']} with a lower average CF score of {best_brand['cf_score']}."
-        
-        # Generate a simple recommendation
-        recommendation = f"""
-        ### Carbon Footprint Analysis for User {user_id}
-        
-        Your CF Score: {user_cf_score}
-        Your CF Category: {user_cf_category}
-        
-        Your selected product ({product_id} by {brand}) falls under the {product_category} category.
-        
-        ### Recommendations:
-        
-        {alt_product_text}
-        
-        {alt_brand_text}
-        
-        ### Sustainability Tips:
-        
-        1. Choose products with longer lifespans
-        2. Opt for repairable items with high repairability scores
-        3. Select products with eco-friendly packaging
-        4. Consider local shipping options when available
-        5. Recycle your electronics properly when they reach end-of-life
-        """
-        
-        return recommendation
+    def get_user_data(self, user_id: str) -> Dict[str, Any]:
+        """Get user data - mock implementation"""
+        # In a real application, this would query a user database
+        return self.mock_user_data.get(user_id, {
+            "purchase_history": [],
+            "cf_score": 50,  # Default CF score
+            "cf_category": "Medium CF",
+            "preferences": []
+        })
     
-    def _format_alt_products(self, alt_products):
-        """Format alternative products for the prompt"""
-        if not alt_products:
-            return "None available"
+    def generate_prompt(self, user_id: str, product: Dict[str, Any], alternatives: List[Dict[str, Any]]) -> str:
+        """Generate a prompt for Gemini based on user and product data"""
+        user_data = self.get_user_data(user_id)
         
-        result = ""
-        for i, product in enumerate(alt_products, 1):
-            result += f"{i}. Product ID: {product['product_id']}, Brand: {product['brand']}, Price: ${product['price']}, CF Score: {product['cf_score']}, Category: {product['cf_category']}\n"
+        # Format the product data
+        product_str = f"""
+Product: {product.get('category_code', 'Unknown category')}
+Brand: {product.get('brand', 'Unknown brand')}
+Price: ${product.get('price', 0):.2f}
+Carbon Footprint Score: {product.get('cf_score', 'N/A')}
+Carbon Footprint Category: {product.get('cf_category', 'Unknown')}
+Packaging: {product.get('packaging_material', 'Unknown')}
+Shipping: {product.get('shipping_mode', 'Unknown')}
+Expected Usage: {product.get('usage_duration', 'Unknown')}
+Repairability: {product.get('repairability_score', 'Unknown')}/10
+"""
+
+        # Format alternatives
+        alternatives_str = ""
+        for i, alt in enumerate(alternatives, 1):
+            alternatives_str += f"""
+Alternative {i}:
+- Brand: {alt.get('brand', 'Unknown brand')}
+- Product: {alt.get('category_code', 'Unknown category')}
+- Price: ${alt.get('price', 0):.2f}
+- CF Score: {alt.get('cf_score', 'N/A')}
+- CF Category: {alt.get('cf_category', 'Unknown')}
+"""
+
+        # Format user's purchase history
+        history_str = ""
+        for i, purchase in enumerate(user_data.get('purchase_history', []), 1):
+            history_str += f"- {purchase.get('brand', 'Unknown brand')} {purchase.get('product', 'product')} (CF: {purchase.get('cf_score', 'N/A')})\n"
         
-        return result
+        prompt = f"""
+You are an expert sustainability advisor helping users make eco-friendly purchasing decisions.
+
+USER INFORMATION:
+User ID: {user_id}
+Overall Carbon Footprint: {user_data.get('cf_score', 'N/A')} ({user_data.get('cf_category', 'Unknown')})
+Purchase History:
+{history_str if history_str else "No purchase history available"}
+
+CURRENT PRODUCT:
+{product_str}
+
+ALTERNATIVE PRODUCTS WITH LOWER CARBON FOOTPRINT:
+{alternatives_str if alternatives_str else "No alternatives available"}
+
+Based on this information, please provide the following insights:
+1. An assessment of the carbon footprint of the current product
+2. How this purchase would impact the user's overall sustainability score
+3. Specific recommendations for more sustainable alternatives
+4. Practical sustainability tips related to this product category
+5. Information about the brand's sustainability practices
+
+Format your response as JSON with the following keys: 
+"product_assessment", "user_impact", "alternatives_recommendation", "sustainability_tips", "brand_info"
+
+Keep your response focused and concise, with each section around 2-3 sentences.
+"""
+        return prompt
     
-    def _format_alt_brands(self, alt_brands):
-        """Format alternative brands for the prompt"""
-        if not alt_brands:
-            return "None available"
+    def generate_recommendations(self, user_id: str, product: Dict[str, Any], alternatives: List[Dict[str, Any]] = None) -> Dict[str, str]:
+        """Generate sustainability recommendations for a user's product"""
+        if alternatives is None:
+            alternatives = []
+            
+        model = self.get_model()
         
-        result = ""
-        for i, brand in enumerate(alt_brands, 1):
-            result += f"{i}. Brand: {brand['brand']}, Average CF Score: {brand['cf_score']}\n"
+        if not model:
+            # Return mock data if model isn't available
+            return {
+                "product_assessment": "This product has a high carbon footprint score, indicating significant environmental impact.",
+                "user_impact": "This purchase would increase your overall carbon footprint.",
+                "alternatives_recommendation": "Consider more sustainable alternatives from brands with better environmental practices.",
+                "sustainability_tips": "Extend the product's lifespan through proper maintenance. Recycle responsibly at end-of-life.",
+                "brand_info": "This brand has moderate sustainability practices compared to industry standards."
+            }
         
-        return result
+        # Generate the prompt
+        prompt = self.generate_prompt(user_id, product, alternatives)
+        
+        try:
+            # Generate response from Gemini
+            response = model.generate_content(prompt)
+            
+            # Parse the response - expecting JSON format
+            try:
+                # Try to extract JSON from the response
+                response_text = response.text
+                
+                # Sometimes Gemini adds ```json and ``` around the response
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].strip()
+                
+                insights = json.loads(response_text)
+                return insights
+            except json.JSONDecodeError:
+                # Fallback to text parsing if JSON extraction fails
+                print("Warning: Failed to parse JSON from Gemini response")
+                response_text = response.text
+                
+                # Create a structured response
+                return {
+                    "product_assessment": "Unable to parse structured response from AI model.",
+                    "user_impact": "Please check your API configuration.",
+                    "alternatives_recommendation": response_text[:100] + "...",
+                    "sustainability_tips": "Try again later.",
+                    "brand_info": "Service temporarily unavailable in structured format."
+                }
+                
+        except Exception as e:
+            print(f"Error generating Gemini insights: {e}")
+            return {
+                "product_assessment": f"Error: {str(e)}",
+                "user_impact": "Could not generate insights due to an error.",
+                "alternatives_recommendation": "Please try again later.",
+                "sustainability_tips": "Service temporarily unavailable.",
+                "brand_info": "Could not retrieve brand information."
+            }
 
 # Example usage
 if __name__ == "__main__":
-    advisor = CarbonFootprintGenAI()
+    advisor = GeminiInsightsGenerator()
     recommendation = advisor.generate_recommendations(
         user_id="u001",
-        product_id="p123",
-        brand="Dell",
-        purchase_time="2022-01-01 10:30:00"
+        product={
+            "category_code": "electronics",
+            "brand": "Dell",
+            "price": 1000,
+            "cf_score": 60,
+            "cf_category": "Medium CF"
+        },
+        alternatives=[
+            {
+                "category_code": "electronics",
+                "brand": "Apple",
+                "price": 1200,
+                "cf_score": 75,
+                "cf_category": "High CF"
+            },
+            {
+                "category_code": "electronics",
+                "brand": "Samsung",
+                "price": 900,
+                "cf_score": 65,
+                "cf_category": "Medium CF"
+            }
+        ]
     )
     print(recommendation) 

@@ -1,127 +1,196 @@
-from fastapi import FastAPI, HTTPException
+import os
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Dict, List, Any, Optional
+import uvicorn
 import pandas as pd
-import joblib
-from datetime import datetime
-from typing import Optional
+import numpy as np
+import pickle
+import json
 
 from carbon_footprint_calculator import CarbonFootprintCalculator
-from genai_api import CarbonFootprintGenAI
+from genai_api import GeminiInsightsGenerator
+from chroma_db_integration import ChromaDBManager
 
-app = FastAPI(title="Carbon Footprint API")
+app = FastAPI(title="EcoSmart Purchase Advisor API")
 
-# Setup CORS
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Load ML model
+# Load the ML model
 try:
-    ml_model = joblib.load('cf_classifier_model.pkl')
+    ml_model = pickle.load(open('cf_classifier_model.pkl', 'rb'))
     print("ML model loaded successfully")
-except:
+except Exception as e:
+    print(f"Error loading ML model: {e}")
     ml_model = None
-    print("ML model not found. Run ml_classifier.py first to generate the model.")
 
-# Initialize CF calculator and GenAI
-cf_calculator = CarbonFootprintCalculator()
-genai_advisor = CarbonFootprintGenAI()
+# Initialize the CF calculator and ChromaDB manager
+calculator = CarbonFootprintCalculator()
+db_manager = ChromaDBManager(collection_name="products", persistence_path="./chroma_db")
 
+# Initialize the Gemini insights generator
+insights_generator = GeminiInsightsGenerator()
+
+# Data models
 class ProductInput(BaseModel):
+    category_code: str
+    brand: str
+    price: float
     packaging_material: str
     shipping_mode: str
     usage_duration: str
     repairability_score: int
-    category_code: str
-    brand: str
-    price: float
 
-class UserProductQuery(BaseModel):
+class RecommendationInput(BaseModel):
     user_id: str
     product_id: str
-    brand: str
-    purchase_time: Optional[str] = None
 
+# Root endpoint
 @app.get("/")
 def read_root():
-    return {"message": "Carbon Footprint API is running (using Gemini AI)"}
+    return {"message": "Welcome to EcoSmart Purchase Advisor API", "status": "active"}
 
+# Calculate CF score for a single product
 @app.post("/calculate-cf")
 def calculate_cf(product: ProductInput):
-    """Calculate CF score for a product based on its attributes"""
-    # Convert to DataFrame for consistent processing
-    product_df = pd.DataFrame({
-        'packaging_material': [product.packaging_material],
-        'shipping_mode': [product.shipping_mode],
-        'usage_duration': [product.usage_duration],
-        'repairability_score': [product.repairability_score],
-        'category_code': [product.category_code],
-        'brand': [product.brand],
-        'price': [product.price]
-    })
-    
-    # Calculate CF score
-    cf_score = cf_calculator.calculate_cf_score(product_df.iloc[0])
-    cf_category = cf_calculator.classify_cf_score(cf_score)
-    
-    return {
-        "cf_score": round(cf_score, 2),
-        "cf_category": cf_category
-    }
+    try:
+        # Convert input to dictionary
+        product_dict = product.dict()
+        
+        # Calculate CF score
+        cf_score = calculator.calculate_cf_score(product_dict)
+        cf_category = calculator.classify_cf_score(cf_score)
+        
+        return {
+            "cf_score": round(cf_score, 2),
+            "cf_category": cf_category,
+            "product": product_dict
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating CF score: {str(e)}")
 
-@app.post("/predict-cf-category")
-def predict_cf_category(product: ProductInput):
-    """Predict CF category using ML model"""
-    if ml_model is None:
-        raise HTTPException(status_code=503, detail="ML model not loaded. Run ml_classifier.py first.")
-    
-    # Convert to DataFrame for consistent processing
-    product_df = pd.DataFrame({
-        'packaging_material': [product.packaging_material],
-        'shipping_mode': [product.shipping_mode],
-        'usage_duration': [product.usage_duration],
-        'repairability_score': [product.repairability_score],
-        'category_code': [product.category_code],
-        'brand': [product.brand],
-        'price': [product.price]
-    })
-    
-    # Use ML model to predict
-    from ml_classifier import predict_cf_category
-    prediction = predict_cf_category(ml_model, product_df)
-    
-    return {
-        "predicted_cf_category": prediction[0]
-    }
+# Get product alternatives with lower CF scores
+@app.get("/alternatives/{product_id}")
+def get_alternatives(product_id: str, limit: int = 5):
+    try:
+        alternatives = db_manager.get_sustainable_alternatives(product_id, limit)
+        return {
+            "alternatives": alternatives,
+            "count": len(alternatives)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error finding alternatives: {str(e)}")
 
+# Query products by brand
+@app.get("/products/brand/{brand}")
+def query_by_brand(brand: str, limit: int = 10):
+    try:
+        products = db_manager.query_by_brand(brand, limit)
+        return {
+            "products": products,
+            "count": len(products)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error querying products: {str(e)}")
+
+# Query products by CF category
+@app.get("/products/category/{category}")
+def query_by_cf_category(category: str, limit: int = 10):
+    try:
+        products = db_manager.query_by_cf_category(category, limit)
+        return {
+            "products": products,
+            "count": len(products)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error querying products: {str(e)}")
+
+# Get personalized recommendations using Gemini
 @app.post("/get-recommendations")
-def get_recommendations(query: UserProductQuery):
-    """Get personalized recommendations for a user's product purchase using Gemini AI"""
-    purchase_time = query.purchase_time or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Get recommendations using GenAI
-    recommendations = genai_advisor.generate_recommendations(
-        user_id=query.user_id,
-        product_id=query.product_id,
-        brand=query.brand,
-        purchase_time=purchase_time
-    )
-    
-    # Get user's CF score
-    user_cf_score, user_cf_category = genai_advisor.get_user_cf_score(query.user_id)
-    
-    return {
-        "user_id": query.user_id,
-        "user_cf_score": round(user_cf_score, 2) if user_cf_score else None,
-        "user_cf_category": user_cf_category,
-        "recommendations": recommendations
-    }
+def get_recommendations(input_data: RecommendationInput):
+    try:
+        user_id = input_data.user_id
+        product_id = input_data.product_id
+        
+        # Get product details
+        # This would typically come from the database
+        # For now, we'll use a mock product if it's not in the DB
+        product = None
+        for i, pid in enumerate(db_manager.ids):
+            if pid == product_id:
+                product = db_manager.products_data[i]
+                break
+        
+        if not product:
+            # Mock product for testing
+            product = {
+                "brand": "apple",
+                "category_code": "electronics.smartphone",
+                "price": 999.0,
+                "packaging_material": "cardboard",
+                "shipping_mode": "air",
+                "usage_duration": "2 years",
+                "repairability_score": 4,
+                "cf_score": 75.5,
+                "cf_category": "High CF"
+            }
+        
+        # Get alternatives with lower CF
+        alternatives = db_manager.get_sustainable_alternatives(product_id, limit=3)
+        
+        # Generate insights using Gemini
+        insights = insights_generator.generate_recommendations(
+            user_id=user_id,
+            product=product,
+            alternatives=alternatives
+        )
+        
+        return {
+            "user_id": user_id,
+            "product_id": product_id,
+            "product_details": product,
+            "alternatives": alternatives,
+            "insights": insights
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")
+
+# Initialize database from CSV file
+@app.post("/admin/init-db")
+def initialize_database(file_path: str = Body(..., embed=True)):
+    try:
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+        
+        # Import data into ChromaDB
+        db_manager.csv_to_chroma(file_path)
+        
+        return {
+            "status": "success",
+            "message": f"Initialized database from {file_path}",
+            "record_count": len(db_manager.products_data)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error initializing database: {str(e)}")
+
+# App startup event
+@app.on_event("startup")
+async def startup_event():
+    # Initialize DB with sample data if available
+    if os.path.exists('data.csv'):
+        try:
+            db_manager.csv_to_chroma('data.csv')
+            print(f"Initialized database with {len(db_manager.products_data)} records from data.csv")
+        except Exception as e:
+            print(f"Error initializing database: {e}")
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True) 

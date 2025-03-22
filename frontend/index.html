@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Footprint Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .eco-green {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .hero-section {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1498925008800-019c6d9f3dbe');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 100px 0;
+            margin-bottom: 30px;
+        }
+        .category-high {
+            background-color: #d9534f;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .category-medium {
+            background-color: #f0ad4e;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .category-low {
+            background-color: #5cb85c;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section text-center">
+        <div class="container">
+            <h1>EcoSmart Purchase Advisor</h1>
+            <p class="lead">Calculate the carbon footprint of your purchases and get personalized recommendations</p>
+            <p><small>Powered by Google's Gemini AI</small></p>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header eco-green">
+                        <h4>Calculate Product Carbon Footprint</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="cfCalculatorForm">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Product Category</label>
+                                <select class="form-select" id="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="electronics.laptop">Laptop</option>
+                                    <option value="electronics.smartphone">Smartphone</option>
+                                    <option value="electronics.tablet">Tablet</option>
+                                    <option value="electronics.headphone">Headphones</option>
+                                    <option value="home.appliance">Home Appliance</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="brand" class="form-label">Brand</label>
+                                <select class="form-select" id="brand" required>
+                                    <option value="">Select Brand</option>
+                                    <option value="Apple">Apple</option>
+                                    <option value="Samsung">Samsung</option>
+                                    <option value="Dell">Dell</option>
+                                    <option value="Lenovo">Lenovo</option>
+                                    <option value="LG">LG</option>
+                                    <option value="Sony">Sony</option>
+                                    <option value="Bose">Bose</option>
+                                    <option value="Acer">Acer</option>
+                                    <option value="HP">HP</option>
+                                    <option value="Asus">Asus</option>
+                                    <option value="Huawei">Huawei</option>
+                                    <option value="Xiaomi">Xiaomi</option>
+                                    <option value="Bosch">Bosch</option>
+                                    <option value="Philips">Philips</option>
+                                    <option value="Microsoft">Microsoft</option>
+                                    <option value="Google">Google</option>
+                                    <option value="Nokia">Nokia</option>
+                                    <option value="Intel">Intel</option>
+                                    <option value="Canon">Canon</option>
+                                    <option value="Nikon">Nikon</option>
+                                    <option value="GoPro">GoPro</option>
+                                    <option value="Razer">Razer</option>
+                                    <option value="Amazon">Amazon</option>
+                                    <option value="JBL">JBL</option>
+                                    <option value="Logitech">Logitech</option>
+                                    <option value="Corsair">Corsair</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price ($)</label>
+                                <input type="number" class="form-control" id="price" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="packagingMaterial" class="form-label">Packaging Material</label>
+                                <select class="form-select" id="packagingMaterial" required>
+                                    <option value="">Select Packaging</option>
+                                    <option value="plastic">Plastic</option>
+                                    <option value="cardboard">Cardboard</option>
+                                    <option value="paper">Paper</option>
+                                    <option value="glass">Glass</option>
+                                    <option value="metal">Metal</option>
+                                    <option value="biodegradable">Biodegradable</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="shippingMode" class="form-label">Shipping Mode</label>
+                                <select class="form-select" id="shippingMode" required>
+                                    <option value="">Select Shipping</option>
+                                    <option value="air">Air</option>
+                                    <option value="road">Road</option>
+                                    <option value="rail">Rail</option>
+                                    <option value="sea">Sea</option>
+                                    <option value="local">Local</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usageDuration" class="form-label">Expected Usage Duration</label>
+                                <select class="form-select" id="usageDuration" required>
+                                    <option value="">Select Duration</option>
+                                    <option value="1 year">1 year</option>
+                                    <option value="2 years">2 years</option>
+                                    <option value="3 years">3 years</option>
+                                    <option value="4 years">4 years</option>
+                                    <option value="5 years">5 years</option>
+                                    <option value="6 years">6 years</option>
+                                    <option value="7 years">7 years or more</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="repairabilityScore" class="form-label">Repairability Score (1-10)</label>
+                                <input type="range" class="form-range" min="1" max="10" id="repairabilityScore" required>
+                                <div class="d-flex justify-content-between">
+                                    <small>Hard to repair</small>
+                                    <small>Easy to repair</small>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn eco-green w-100">Calculate Carbon Footprint</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header eco-green">
+                        <h4>Results & Recommendations</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultsSection" style="display: none;">
+                            <div class="text-center mb-4">
+                                <h5>Carbon Footprint Score</h5>
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <div class="progress" style="height: 30px; width: 80%;">
+                                        <div id="cfProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0</div>
+                                    </div>
+                                </div>
+                                <p class="mt-2">Category: <span id="cfCategory" class="fw-bold"></span></p>
+                            </div>
+                        </div>
+                        
+                        <div id="recommendationsSection" style="display: none;">
+                            <h5>Get Personalized Recommendations</h5>
+                            <form id="recommendationsForm" class="mb-3">
+                                <div class="mb-3">
+                                    <label for="userId" class="form-label">User ID</label>
+                                    <input type="text" class="form-control" id="userId" placeholder="Enter your user ID" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="productId" class="form-label">Product ID</label>
+                                    <input type="text" class="form-control" id="productId" placeholder="Product ID (e.g., p123)" required>
+                                </div>
+                                <button type="submit" class="btn eco-green w-100">Get Gemini AI Recommendations</button>
+                            </form>
+                        </div>
+                        
+                        <div id="aiRecommendations" style="display: none;">
+                            <hr>
+                            <h5>Gemini AI Recommendations</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div id="recommendationsContent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p>EcoSmart Purchase Advisor &copy; 2023 | Sustainability Hackathon</p>
+            <p><small>Powered by Google's Gemini AI</small></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Base API URL - update with your actual backend URL
+        const API_URL = 'http://localhost:8000';
+        
+        document.getElementById('cfCalculatorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productData = {
+                category_code: document.getElementById('category').value,
+                brand: document.getElementById('brand').value,
+                price: parseFloat(document.getElementById('price').value),
+                packaging_material: document.getElementById('packagingMaterial').value,
+                shipping_mode: document.getElementById('shippingMode').value,
+                usage_duration: document.getElementById('usageDuration').value,
+                repairability_score: parseInt(document.getElementById('repairabilityScore').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/calculate-cf`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                const result = await response.json();
+                
+                // Display results
+                document.getElementById('resultsSection').style.display = 'block';
+                document.getElementById('recommendationsSection').style.display = 'block';
+                
+                const cfScore = result.cf_score;
+                const cfCategory = result.cf_category;
+                
+                // Update progress bar
+                const progressBar = document.getElementById('cfProgressBar');
+                progressBar.style.width = `${cfScore}%`;
+                progressBar.textContent = `${cfScore}`;
+                
+                // Set color based on category
+                if (cfCategory === 'High CF') {
+                    progressBar.className = 'progress-bar bg-danger';
+                    document.getElementById('cfCategory').className = 'fw-bold category-high';
+                } else if (cfCategory === 'Medium CF') {
+                    progressBar.className = 'progress-bar bg-warning';
+                    document.getElementById('cfCategory').className = 'fw-bold category-medium';
+                } else {
+                    progressBar.className = 'progress-bar bg-success';
+                    document.getElementById('cfCategory').className = 'fw-bold category-low';
+                }
+                
+                document.getElementById('cfCategory').textContent = cfCategory;
+                
+            } catch (error) {
+                console.error('Error calculating CF:', error);
+                alert('Error calculating Carbon Footprint. Please try again.');
+            }
+        });
+        
+        document.getElementById('recommendationsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                user_id: document.getElementById('userId').value,
+                product_id: document.getElementById('productId').value,
+                brand: document.getElementById('brand').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/get-recommendations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                const result = await response.json();
+                
+                // Display AI recommendations
+                document.getElementById('aiRecommendations').style.display = 'block';
+                document.getElementById('recommendationsContent').innerHTML = `
+                    <p><strong>User CF Score:</strong> ${result.user_cf_score || 'N/A'}</p>
+                    <p><strong>Category:</strong> ${result.user_cf_category || 'N/A'}</p>
+                    <hr>
+                    <p>${formatRecommendations(result.recommendations)}</p>
+                `;
+                
+            } catch (error) {
+                console.error('Error getting recommendations:', error);
+                alert('Error getting recommendations. Please try again.');
+            }
+        });
+        
+        function formatRecommendations(text) {
+            // Simple formatting: convert newlines to <br> and wrap paragraphs
+            if (!text) return '';
+            
+            return text.split('\n\n')
+                .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
+                .join('');
+        }
+    </script>
+</body>
+</html> 

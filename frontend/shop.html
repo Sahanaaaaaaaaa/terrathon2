@@ -503,10 +503,24 @@
 
         // Function to analyze cart and provide recommendations
         function analyzeCart() {
+            console.log('analyzeCart function called');
+            
             if (cart.length === 0) {
                 showToast('Add items to your cart first!');
+                console.log('Cart is empty, returning early');
                 return;
             }
+            
+            // Close the cart modal if it's open
+            const cartModal = document.getElementById('cartModal');
+            if (cartModal) {
+                const bsCartModal = bootstrap.Modal.getInstance(cartModal);
+                if (bsCartModal) {
+                    bsCartModal.hide();
+                }
+            }
+            
+            console.log('Creating analysis modal with cart items:', cart);
             
             // Calculate totals and averages
             const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
@@ -516,6 +530,7 @@
             
             // Get item with highest CF score
             const worstItem = [...cart].sort((a, b) => b.cf_score - a.cf_score)[0];
+            console.log('Worst item identified:', worstItem);
             
             // Find better alternative
             const alternatives = products.filter(p => 
@@ -523,6 +538,7 @@
                 p.brand !== worstItem.brand && 
                 p.cf_score < worstItem.cf_score
             ).sort((a, b) => a.cf_score - b.cf_score);
+            console.log('Alternatives found:', alternatives);
             
             // Create cart analysis modal with new UI
             const analysisModal = new bootstrap.Modal(document.createElement('div'));
@@ -896,25 +912,26 @@
             
             // Set up analyze button
             document.getElementById('analyzeCartBtn').addEventListener('click', function() {
+                console.log('Analyze button clicked');
                 analyzeCart();
-                bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
             });
-        });
 
-        // Initialize the cart summary extension
-        document.getElementById('showCartSummaryBtn').addEventListener('click', function() {
-            document.getElementById('cartSummaryExtension').classList.remove('d-none');
-            this.classList.add('d-none');
-            updateMiniCartUI();
-        });
+            // Initialize the cart summary extension
+            document.getElementById('showCartSummaryBtn').addEventListener('click', function() {
+                document.getElementById('cartSummaryExtension').classList.remove('d-none');
+                this.classList.add('d-none');
+                updateMiniCartUI();
+            });
 
-        document.getElementById('hideCartSummaryBtn').addEventListener('click', function() {
-            document.getElementById('cartSummaryExtension').classList.add('d-none');
-            document.getElementById('showCartSummaryBtn').classList.remove('d-none');
-        });
+            document.getElementById('hideCartSummaryBtn').addEventListener('click', function() {
+                document.getElementById('cartSummaryExtension').classList.add('d-none');
+                document.getElementById('showCartSummaryBtn').classList.remove('d-none');
+            });
 
-        document.getElementById('miniAnalyzeCartBtn').addEventListener('click', function() {
-            analyzeCart();
+            document.getElementById('miniAnalyzeCartBtn').addEventListener('click', function() {
+                console.log('Mini analyze button clicked');
+                analyzeCart();
+            });
         });
 
         // Function to update the mini cart UI

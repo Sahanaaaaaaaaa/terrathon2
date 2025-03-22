@@ -73,6 +73,9 @@ class PurchaseChoiceInput(BaseModel):
     product_id: str
     choice: str  # "ai_suggested" or "original"
 
+# Get the absolute path to the directory containing app.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Root endpoint
 @app.get("/")
 def read_root():
@@ -215,18 +218,20 @@ async def startup_event():
 # Load user purchase history from CSV
 def load_user_purchase_history():
     try:
-        df = pd.read_csv('df_2.csv')
+        csv_path = os.path.join(BASE_DIR, 'datasets', 'df_2.csv')
+        df = pd.read_csv(csv_path)
         return df
     except Exception as e:
-        print(f"Error loading user purchase history: {e}")
+        print(f"Error loading user purchase history from {csv_path}: {e}")
         return pd.DataFrame()
 
 # Save user purchase history to CSV
 def save_user_purchase_history(df):
     try:
-        df.to_csv('df_2.csv', index=False)
+        csv_path = os.path.join(BASE_DIR, 'datasets', 'df_2.csv')
+        df.to_csv(csv_path, index=False)
     except Exception as e:
-        print(f"Error saving user purchase history: {e}")
+        print(f"Error saving user purchase history to {csv_path}: {e}")
 
 # Get user's sustainable purchase streak
 def get_user_streak(user_id: str) -> int:
@@ -289,8 +294,9 @@ async def submit_purchase_choice(input_data: PurchaseChoiceInput):
         }
         
         # Load existing data
+        csv_path = os.path.join(BASE_DIR, 'datasets', 'df_2.csv')
         try:
-            df = pd.read_csv('df_2.csv')
+            df = pd.read_csv(csv_path)
             print(f"Loaded {len(df)} existing records from CSV")
         except Exception as e:
             print(f"Creating new CSV file as existing one couldn't be loaded: {e}")
@@ -300,7 +306,7 @@ async def submit_purchase_choice(input_data: PurchaseChoiceInput):
         df = pd.concat([df, pd.DataFrame([new_purchase])], ignore_index=True)
         
         # Save updated data
-        df.to_csv('df_2.csv', index=False)
+        df.to_csv(csv_path, index=False)
         print(f"Saved {len(df)} records to CSV file")
         
         # Load and update user streak
@@ -331,6 +337,13 @@ async def submit_purchase_choice(input_data: PurchaseChoiceInput):
             print(f"Added purchase record to ChromaDB")
         except Exception as e:
             print(f"Warning: Could not update ChromaDB: {e}")
+        
+        # Verify streak was saved
+        updated_streaks = load_user_streaks()
+        if updated_streaks.get(user_id) != current_streak:
+            print(f"Warning: Streak may not have been saved correctly. Expected: {current_streak}, Found: {updated_streaks.get(user_id)}")
+            # Try saving again
+            save_user_streaks(user_streaks)
         
         return {
             "success": True,
@@ -365,29 +378,79 @@ async def get_user_streak(user_id: str):
 
 def load_user_streaks():
     try:
-        if os.path.exists('user_streaks.json'):
-            with open('user_streaks.json', 'r') as f:
+        json_path = os.path.join(BASE_DIR, 'user_streaks.json')
+        if os.path.exists(json_path):
+            with open(json_path, 'r') as f:
                 return json.load(f)
         return {}
     except Exception as e:
-        print(f"Error loading user streaks: {e}")
+        print(f"Error loading user streaks from {json_path}: {e}")
         return {}
 
 def save_user_streaks(streaks):
     try:
-        with open('user_streaks.json', 'w') as f:
+        json_path = os.path.join(BASE_DIR, 'user_streaks.json')
+        temp_file = os.path.join(BASE_DIR, 'user_streaks.json.tmp')
+        
+        # Ensure the file is written atomically to prevent corruption
+        with open(temp_file, 'w') as f:
             json.dump(streaks, f)
+        # Atomic rename
+        os.replace(temp_file, json_path)
+        print(f"Successfully saved streaks to {json_path}: {streaks}")
     except Exception as e:
-        print(f"Error saving user streaks: {e}")
+        print(f"Error saving user streaks to {json_path}: {e}")
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+        raise e
 
 @app.get("/user-streaks-file")
 async def get_user_streaks_file():
     try:
-        with open('user_streaks.txt', 'r') as f:
+        json_path = os.path.join(BASE_DIR, 'user_streaks.txt')
+        with open(json_path, 'r') as f:
             content = f.read()
         return Response(content=content, media_type="text/plain")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/update-streak")
+async def update_streak(user_id: str, is_sustainable: bool):
+    try:
+        # Get the absolute path to user_streaks.json
+        json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_streaks.json')
+        
+        # Read current streaks
+        try:
+            with open(json_path, 'r') as f:
+                user_streaks = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            user_streaks = {}
+        
+        # Update streak based on choice
+        if is_sustainable:
+            user_streaks[user_id] = user_streaks.get(user_id, 0) + 1
+        else:
+            user_streaks[user_id] = 0
+            
+        # Save updated streaks atomically
+        temp_path = json_path + '.tmp'
+        try:
+            with open(temp_path, 'w') as f:
+                json.dump(user_streaks, f, indent=2)
+            os.replace(temp_path, json_path)
+        except Exception as e:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise e
+            
+        return {"success": True, "streak": user_streaks[user_id]}
+    except Exception as e:
+        print(f"Error updating streak: {str(e)}")
+        return {"success": False, "error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True) 

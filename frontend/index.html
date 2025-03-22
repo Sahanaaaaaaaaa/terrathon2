@@ -244,7 +244,11 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container mb-5">
+    <div class="container mt-5">
+        <div id="currentStreakDisplay" style="display: none;" class="alert alert-info text-center mb-4">
+            <i class="fas fa-fire me-2"></i>
+            Your current sustainable purchase streak: <strong><span id="currentStreak">0</span></strong>
+        </div>
         <!-- Feature Row -->
         <div class="row text-center mb-5">
             <div class="col-md-4 mb-4">
@@ -543,29 +547,30 @@
                                     <p class="small text-muted">Receive personalized suggestions to reduce your carbon footprint based on your purchase history and preferences.</p>
                                 </div>
                             </div>
-                            <form id="recommendationsForm" class="mb-3">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="userId" class="form-label">User ID</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">
-                                                    <i class="fas fa-user"></i>
-                                                </span>
-                                                <input type="text" class="form-control" id="userId" placeholder="Your user ID" required>
-                                            </div>
-                                        </div>
+                            <div id="userStatsDisplay" class="alert alert-info mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-fire me-2"></i>
+                                        Current Streak: <strong><span id="streakCount">0</span></strong>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="productId" class="form-label">Product ID</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">
-                                                    <i class="fas fa-barcode"></i>
-                                                </span>
-                                                <input type="text" class="form-control" id="productId" placeholder="e.g., p123" required>
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <i class="fas fa-coins me-2"></i>
+                                        Total Credits: <strong><span id="creditsCount">0</span></strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <form id="recommendationsForm" class="mb-4">
+                                <div class="mb-3">
+                                    <label for="recommendationsUserId" class="form-label">User ID</label>
+                                    <input type="text" class="form-control" id="recommendationsUserId" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="productId" class="form-label">Product ID</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-barcode"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="productId" placeholder="e.g., p123" required>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn eco-green w-100">
@@ -590,6 +595,36 @@
                                         </div>
                                         <div id="recommendationsContent" class="flex-grow-1"></div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Purchase Choice Section -->
+                        <div id="purchaseChoiceSection" style="display: none;" class="mt-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Which product did you purchase?</h5>
+                                    <div id="streakDisplay" class="alert alert-info mb-3" style="display: none;">
+                                        <i class="fas fa-fire me-2"></i>
+                                        Your current sustainable purchase streak: <span id="streakCount">0</span>
+                                    </div>
+                                    <form id="purchaseChoiceForm">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="purchaseChoice" id="aiSuggestedChoice" value="ai_suggested">
+                                            <label class="form-check-label" for="aiSuggestedChoice">
+                                                The AI-suggested sustainable alternative
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="purchaseChoice" id="originalChoice" value="original">
+                                            <label class="form-check-label" for="originalChoice">
+                                                The original product I was planning to buy
+                                            </label>
+                                        </div>
+                                        <button type="submit" class="btn eco-green">
+                                            <i class="fas fa-check me-2"></i>Submit Choice
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -737,8 +772,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Base API URL - update with your actual backend URL
-        const API_URL = 'http://localhost:8000';
+        // Set API URL based on whether we're running locally or directly
+        const API_URL = window.location.protocol === 'file:' ? 'http://localhost:8000' : window.location.origin;
         
         // Mock user purchase history database
         const userPurchaseHistory = {
@@ -1186,7 +1221,7 @@
                 
                 // Find alternatives and pre-fill recommendation form
                 if (document.getElementById('recommendationsForm')) {
-                    const userIdFields = document.querySelectorAll('#recommendationsForm #userId');
+                    const userIdFields = document.querySelectorAll('#recommendationsForm #recommendationsUserId');
                     if (userIdFields.length > 0) {
                         userIdFields[0].value = productData.user_id;
                     }
@@ -1486,7 +1521,7 @@
             submitBtn.disabled = true;
             
             const userData = {
-                user_id: document.getElementById('recommendationsForm').querySelector('#userId').value,
+                user_id: document.getElementById('recommendationsUserId').value,
                 product_id: document.getElementById('productId').value
             };
             
@@ -1568,6 +1603,9 @@
                     aiRecommendations.style.transition = 'opacity 0.5s ease';
                     aiRecommendations.style.opacity = '1';
                     
+                    // Show purchase choice section
+                    document.getElementById('purchaseChoiceSection').style.display = 'block';
+                    
                     // Scroll to recommendations
                     aiRecommendations.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
@@ -1577,6 +1615,74 @@
                 alert('Error getting recommendations. Please try again.');
             } finally {
                 // Restore button state
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Handle purchase choice form submission
+        document.getElementById('purchaseChoiceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Submitting...';
+            submitBtn.disabled = true;
+            
+            const purchaseChoice = document.querySelector('input[name="purchaseChoice"]:checked').value;
+            const userId = document.getElementById('recommendationsUserId').value;
+            const productId = document.getElementById('productId').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/submit-purchase-choice`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        product_id: productId,
+                        choice: purchaseChoice
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message with streak
+                    const successMessage = document.createElement('div');
+                    successMessage.className = 'alert alert-success mt-3';
+                    successMessage.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${result.message}
+                    `;
+                    this.appendChild(successMessage);
+                    
+                    // Update streak display immediately
+                    const streakDisplay = document.getElementById('currentStreakDisplay');
+                    const streakCount = document.getElementById('currentStreak');
+                    if (result.streak > 0) {
+                        streakCount.textContent = result.streak;
+                        streakDisplay.style.display = 'block';
+                    }
+                    
+                    // Wait for 2 seconds to show the message before refreshing
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(result.message || 'Failed to submit purchase choice');
+                }
+            } catch (error) {
+                console.error('Error submitting purchase choice:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-danger mt-3';
+                errorMessage.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error submitting your choice: ${error.message}
+                `;
+                this.appendChild(errorMessage);
+            } finally {
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             }
@@ -1674,6 +1780,40 @@
                 return 'bg-success';
             }
         }
+
+        // Function to update display based on user ID
+        async function loadUserStats() {
+            const userId = document.getElementById('recommendationsUserId').value || document.getElementById('userId').value;
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/user-streak/${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update all streak and credits displays on the page
+                    document.querySelectorAll('[id="streakCount"]').forEach(el => el.textContent = data.streak);
+                    document.querySelectorAll('[id="creditsCount"]').forEach(el => el.textContent = data.credits);
+                    document.getElementById('currentStreak').textContent = data.streak;
+                    
+                    // Show the streak display if there's a streak
+                    if (data.streak > 0) {
+                        document.getElementById('currentStreakDisplay').style.display = 'block';
+                    }
+                } else {
+                    console.error('Failed to load user stats:', data);
+                }
+            } catch (error) {
+                console.error('Error loading user stats:', error);
+            }
+        }
+
+        // Add event listeners for user ID inputs
+        document.getElementById('recommendationsUserId')?.addEventListener('input', loadUserStats);
+        document.getElementById('userId')?.addEventListener('input', loadUserStats);
+
+        // Load stats on page load if user ID is present
+        window.addEventListener('load', loadUserStats);
     </script>
 </body>
 </html> 

@@ -197,6 +197,33 @@ class ChromaDBManager:
         # 
         # return results['metadatas'] if results and 'metadatas' in results else []
 
+    def add_purchase_record(self, purchase_data: Dict[str, Any]) -> str:
+        """
+        Add a new purchase record to the database
+        
+        Args:
+            purchase_data: Dictionary containing purchase information
+            
+        Returns:
+            ID of the new purchase record
+        """
+        # Generate new ID
+        new_id = f"purchase_{len(self.ids)}"
+        
+        # Add to our placeholder structures
+        self.products_data.append(purchase_data)
+        self.ids.append(new_id)
+        self.embeddings_placeholder.append([0.0] * 10)  # Placeholder embedding
+        
+        # When ChromaDB is installed, uncomment these lines:
+        # self.collection.add(
+        #     ids=[new_id],
+        #     embeddings=[self.embeddings_placeholder[-1]],  # Replace with real embedding if available
+        #     metadatas=[purchase_data]
+        # )
+        
+        return new_id
+
 if __name__ == "__main__":
     # Example usage
     manager = ChromaDBManager()

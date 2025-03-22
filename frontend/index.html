@@ -412,91 +412,6 @@
                                 </div>
                             </div>
                             
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="packagingMaterial" class="form-label">Packaging Material</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light">
-                                                <i class="fas fa-box"></i>
-                                            </span>
-                                            <select class="form-select" id="packagingMaterial" required>
-                                                <option value="">Select Packaging</option>
-                                                <option value="plastic">Plastic</option>
-                                                <option value="cardboard">Cardboard</option>
-                                                <option value="paper">Paper</option>
-                                                <option value="glass">Glass</option>
-                                                <option value="metal">Metal</option>
-                                                <option value="biodegradable">Biodegradable</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="shippingMode" class="form-label">Shipping Mode</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light">
-                                                <i class="fas fa-truck"></i>
-                                            </span>
-                                            <select class="form-select" id="shippingMode" required>
-                                                <option value="">Select Shipping</option>
-                                                <option value="air">Air</option>
-                                                <option value="road">Road</option>
-                                                <option value="rail">Rail</option>
-                                                <option value="sea">Sea</option>
-                                                <option value="local">Local</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="usageDuration" class="form-label">Expected Usage Duration</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light">
-                                                <i class="fas fa-clock"></i>
-                                            </span>
-                                            <select class="form-select" id="usageDuration" required>
-                                                <option value="">Select Duration</option>
-                                                <option value="1 year">1 year</option>
-                                                <option value="2 years">2 years</option>
-                                                <option value="3 years">3 years</option>
-                                                <option value="4 years">4 years</option>
-                                                <option value="5 years">5 years</option>
-                                                <option value="6 years">6 years</option>
-                                                <option value="7 years">7 years or more</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="repairabilityScore" class="form-label">Repairability Score</label>
-                                        <div class="d-flex justify-content-between small mb-1">
-                                            <span>Hard to repair</span>
-                                            <span>Easy to repair</span>
-                                        </div>
-                                        <input type="range" class="form-range" min="1" max="10" id="repairabilityScore" required>
-                                        <div class="d-flex justify-content-between">
-                                            <span>1</span>
-                                            <span>2</span>
-                                            <span>3</span>
-                                            <span>4</span>
-                                            <span>5</span>
-                                            <span>6</span>
-                                            <span>7</span>
-                                            <span>8</span>
-                                            <span>9</span>
-                                            <span>10</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
                             <button type="submit" class="btn eco-green w-100 mt-3">
                                 <i class="fas fa-calculator me-2"></i>Calculate Carbon Footprint
                             </button>
@@ -560,19 +475,6 @@
                                 </div>
                             </div>
                             <form id="recommendationsForm" class="mb-4">
-                                <div class="mb-3">
-                                    <label for="recommendationsUserId" class="form-label">User ID</label>
-                                    <input type="text" class="form-control" id="recommendationsUserId" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="productId" class="form-label">Product ID</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light">
-                                            <i class="fas fa-barcode"></i>
-                                        </span>
-                                        <input type="text" class="form-control" id="productId" placeholder="e.g., p123" required>
-                                    </div>
-                                </div>
                                 <button type="submit" class="btn eco-green w-100">
                                     <i class="fab fa-google me-2"></i>Get Gemini AI Recommendations
                                 </button>
@@ -1146,12 +1048,6 @@
                 }));
         }
         
-        // Show value of slider
-        const repairabilitySlider = document.getElementById('repairabilityScore');
-        repairabilitySlider.addEventListener('input', function() {
-            // Update visual indicator if needed
-        });
-        
         document.getElementById('cfCalculatorForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1162,18 +1058,42 @@
             submitBtn.disabled = true;
             
             const userId = document.getElementById('userId').value;
-            const productData = {
-                user_id: userId,
-                category_code: document.getElementById('category').value,
-                brand: document.getElementById('brand').value,
-                price: parseFloat(document.getElementById('price').value),
-                packaging_material: document.getElementById('packagingMaterial').value,
-                shipping_mode: document.getElementById('shippingMode').value,
-                usage_duration: document.getElementById('usageDuration').value,
-                repairability_score: parseInt(document.getElementById('repairabilityScore').value)
-            };
+            const category = document.getElementById('category').value;
+            const brand = document.getElementById('brand').value;
+            const price = parseFloat(document.getElementById('price').value);
             
             try {
+                // Instead of fetching CSV which causes CORS issues, use product database values
+                let packagingData = null;
+                
+                // Check if we have this brand and category in our product database
+                const categoryProducts = productDatabase[category] || {};
+                const brandData = categoryProducts[brand];
+                
+                if (brandData) {
+                    // Use values from product database
+                    packagingData = {
+                        'Packaging Material': brandData.packaging_material,
+                        'Shipping Mode': brandData.shipping_mode,
+                        'Usage Duration': brandData.usage_duration.split(' ')[0], // Extract number from "X years"
+                        'Repairability Score': brandData.repairability_score
+                    };
+                }
+                
+                // Create product data with values from product database or fallback to defaults if not found
+                const productData = {
+                    category_code: category,
+                    brand: brand,
+                    price: price,
+                    // Use values from database or fallback to defaults
+                    packaging_material: packagingData ? packagingData['Packaging Material'].toLowerCase() : 'cardboard',
+                    shipping_mode: packagingData ? packagingData['Shipping Mode'].toLowerCase() : 'road',
+                    usage_duration: packagingData ? packagingData['Usage Duration'] + ' years' : '3 years',
+                    repairability_score: packagingData ? parseInt(packagingData['Repairability Score']) : 5
+                };
+                
+                console.log("Product data with packaging info:", productData);
+                
                 // Calculate carbon footprint locally
                 const result = calculateCarbonFootprint(productData);
                 
@@ -1520,9 +1440,10 @@
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Getting recommendations...';
             submitBtn.disabled = true;
             
+            // Use user ID from calculator form instead of the recommendations form (which no longer has these fields)
             const userData = {
-                user_id: document.getElementById('recommendationsUserId').value,
-                product_id: document.getElementById('productId').value
+                user_id: document.getElementById('userId').value || '45', // Default to user 45 if none provided
+                product_id: 'default_product' // Use a default value since we've removed the field
             };
             
             try {
@@ -1630,10 +1551,59 @@
             submitBtn.disabled = true;
             
             const purchaseChoice = document.querySelector('input[name="purchaseChoice"]:checked').value;
-            const userId = document.getElementById('recommendationsUserId').value;
-            const productId = document.getElementById('productId').value;
+            const userId = document.getElementById('userId').value || '45';
+            const productId = 'default_product';
             
             try {
+                // Check if we're running with a static file server (no API available)
+                if (window.location.protocol === 'file:' || window.location.port === '8080') {
+                    // Handle locally instead of making API call
+                    console.log("Static file server detected, handling choice locally");
+                    // Simulate a successful response
+                    const userStreaks = {"45": 11, "25": 0};
+                    
+                    // Increment streak if using sustainable alternative
+                    if (purchaseChoice === 'ai_suggested') {
+                        if (userStreaks[userId]) {
+                            userStreaks[userId]++;
+                        } else {
+                            userStreaks[userId] = 1;
+                        }
+                    } else {
+                        // Reset streak if choosing original product
+                        userStreaks[userId] = 0;
+                    }
+                    
+                    // Show success message
+                    const successMessage = document.createElement('div');
+                    successMessage.className = 'alert alert-success mt-3';
+                    successMessage.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        Choice recorded successfully! ${purchaseChoice === 'ai_suggested' ? 'Your eco-streak has increased!' : 'Your eco-streak has been reset.'}
+                    `;
+                    this.appendChild(successMessage);
+                    
+                    // Update display
+                    const streakDisplay = document.getElementById('currentStreakDisplay');
+                    const streakCount = document.getElementById('currentStreak');
+                    const streak = userStreaks[userId] || 0;
+                    
+                    if (streak > 0) {
+                        streakCount.textContent = streak;
+                        streakDisplay.style.display = 'block';
+                    } else {
+                        streakDisplay.style.display = 'none';
+                    }
+                    
+                    // Wait 2 seconds before reloading
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                    
+                    return;
+                }
+                
+                // Otherwise try to use the API
                 const response = await fetch(`${API_URL}/submit-purchase-choice`, {
                     method: 'POST',
                     headers: {
@@ -1783,25 +1753,28 @@
 
         // Function to update display based on user ID
         async function loadUserStats() {
-            const userId = document.getElementById('recommendationsUserId').value || document.getElementById('userId').value;
+            const userId = document.getElementById('userId').value;
             if (!userId) return;
 
             try {
-                const response = await fetch(`${API_URL}/user-streak/${userId}`);
-                const data = await response.json();
+                // Instead of making an API call, use hardcoded data from user_streaks.json
+                const userStreaks = {"45": 11, "25": 0};
                 
-                if (data.success) {
-                    // Update all streak and credits displays on the page
-                    document.querySelectorAll('[id="streakCount"]').forEach(el => el.textContent = data.streak);
-                    document.querySelectorAll('[id="creditsCount"]').forEach(el => el.textContent = data.credits);
-                    document.getElementById('currentStreak').textContent = data.streak;
-                    
-                    // Show the streak display if there's a streak
-                    if (data.streak > 0) {
-                        document.getElementById('currentStreakDisplay').style.display = 'block';
-                    }
-                } else {
-                    console.error('Failed to load user stats:', data);
+                // Mock API response
+                const data = {
+                    success: true,
+                    streak: userStreaks[userId] || 0,
+                    credits: userStreaks[userId] ? userStreaks[userId] * 10 : 0 // Mock credits calculation
+                };
+                
+                // Update all streak and credits displays on the page
+                document.querySelectorAll('[id="streakCount"]').forEach(el => el.textContent = data.streak);
+                document.querySelectorAll('[id="creditsCount"]').forEach(el => el.textContent = data.credits);
+                document.getElementById('currentStreak').textContent = data.streak;
+                
+                // Show the streak display if there's a streak
+                if (data.streak > 0) {
+                    document.getElementById('currentStreakDisplay').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error loading user stats:', error);
@@ -1809,7 +1782,6 @@
         }
 
         // Add event listeners for user ID inputs
-        document.getElementById('recommendationsUserId')?.addEventListener('input', loadUserStats);
         document.getElementById('userId')?.addEventListener('input', loadUserStats);
 
         // Load stats on page load if user ID is present

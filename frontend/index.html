@@ -1697,44 +1697,32 @@
             
             const purchaseChoice = document.querySelector('input[name="purchaseChoice"]:checked').value;
             const userId = document.getElementById('userId').value || '45';
-            const productId = 'default_product';
             
             try {
-                // Check if we're running with a static file server (no API available)
-                if (window.location.protocol === 'file:' || window.location.port === '8080') {
-                    // Handle locally instead of making API call
-                    console.log("Static file server detected, handling choice locally");
-                    // Simulate a successful response
-                    const userStreaks = {"45": 11, "25": 0};
-                    
-                    // Increment streak if using sustainable alternative
-                    if (purchaseChoice === 'ai_suggested') {
-                        if (userStreaks[userId]) {
-                            userStreaks[userId]++;
-                        } else {
-                            userStreaks[userId] = 1;
-                        }
-                    } else {
-                        // Reset streak if choosing original product
-                        userStreaks[userId] = 0;
-                    }
-                    
+                // Call the Python script to update the streak
+                const isSustainable = purchaseChoice === 'ai_suggested';
+                const response = await fetch(`${API_URL}/update-streak?user_id=${userId}&is_sustainable=${isSustainable}`);
+                const result = await response.json();
+                
+                if (result.success) {
                     // Show success message
                     const successMessage = document.createElement('div');
                     successMessage.className = 'alert alert-success mt-3';
                     successMessage.innerHTML = `
                         <i class="fas fa-check-circle me-2"></i>
-                        Choice recorded successfully! ${purchaseChoice === 'ai_suggested' ? 'Your eco-streak has increased!' : 'Your eco-streak has been reset.'}
+                        Choice recorded successfully! ${isSustainable ? 'Your eco-streak has increased!' : 'Your eco-streak has been reset.'}
                     `;
                     this.appendChild(successMessage);
                     
-                    // Update display
-                    const streakDisplay = document.getElementById('currentStreakDisplay');
-                    const streakCount = document.getElementById('currentStreak');
-                    const streak = userStreaks[userId] || 0;
+                    // Update all streak displays on the page
+                    const streak = result.streak || 0;
+                    document.querySelectorAll('[id="streakCount"]').forEach(el => el.textContent = streak);
+                    document.querySelectorAll('[id="creditsCount"]').forEach(el => el.textContent = streak * 10);
+                    document.getElementById('currentStreak').textContent = streak;
                     
+                    // Show/hide streak display
+                    const streakDisplay = document.getElementById('currentStreakDisplay');
                     if (streak > 0) {
-                        streakCount.textContent = streak;
                         streakDisplay.style.display = 'block';
                     } else {
                         streakDisplay.style.display = 'none';
@@ -1744,57 +1732,16 @@
                     setTimeout(() => {
                         window.location.reload();
                     }, 2000);
-                    
-                    return;
-                }
-                
-                // Otherwise try to use the API
-                const response = await fetch(`${API_URL}/submit-purchase-choice`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        product_id: productId,
-                        choice: purchaseChoice
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Show success message with streak
-                    const successMessage = document.createElement('div');
-                    successMessage.className = 'alert alert-success mt-3';
-                    successMessage.innerHTML = `
-                        <i class="fas fa-check-circle me-2"></i>
-                        ${result.message}
-                    `;
-                    this.appendChild(successMessage);
-                    
-                    // Update streak display immediately
-                    const streakDisplay = document.getElementById('currentStreakDisplay');
-                    const streakCount = document.getElementById('currentStreak');
-                    if (result.streak > 0) {
-                        streakCount.textContent = result.streak;
-                        streakDisplay.style.display = 'block';
-                    }
-                    
-                    // Wait for 2 seconds to show the message before refreshing
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
                 } else {
-                    throw new Error(result.message || 'Failed to submit purchase choice');
+                    throw new Error('Failed to update streak');
                 }
             } catch (error) {
-                console.error('Error submitting purchase choice:', error);
+                console.error('Error updating streak:', error);
                 const errorMessage = document.createElement('div');
                 errorMessage.className = 'alert alert-danger mt-3';
                 errorMessage.innerHTML = `
                     <i class="fas fa-exclamation-circle me-2"></i>
-                    Error submitting your choice: ${error.message}
+                    Error updating your streak: ${error.message}
                 `;
                 this.appendChild(errorMessage);
             } finally {
@@ -1902,24 +1849,22 @@
             if (!userId) return;
 
             try {
-                // Instead of making an API call, use hardcoded data from user_streaks.json
-                const userStreaks = {"45": 11, "25": 0};
+                // Make API call to get real streak data
+                const response = await fetch(`${API_URL}/user-streak/${userId}`);
+                const data = await response.json();
                 
-                // Mock API response
-                const data = {
-                    success: true,
-                    streak: userStreaks[userId] || 0,
-                    credits: userStreaks[userId] ? userStreaks[userId] * 10 : 0 // Mock credits calculation
-                };
-                
-                // Update all streak and credits displays on the page
-                document.querySelectorAll('[id="streakCount"]').forEach(el => el.textContent = data.streak);
-                document.querySelectorAll('[id="creditsCount"]').forEach(el => el.textContent = data.credits);
-                document.getElementById('currentStreak').textContent = data.streak;
-                
-                // Show the streak display if there's a streak
-                if (data.streak > 0) {
-                    document.getElementById('currentStreakDisplay').style.display = 'block';
+                if (data.success) {
+                    // Update all streak and credits displays on the page
+                    document.querySelectorAll('[id="streakCount"]').forEach(el => el.textContent = data.streak);
+                    document.querySelectorAll('[id="creditsCount"]').forEach(el => el.textContent = data.credits);
+                    document.getElementById('currentStreak').textContent = data.streak;
+                    
+                    // Show the streak display if there's a streak
+                    if (data.streak > 0) {
+                        document.getElementById('currentStreakDisplay').style.display = 'block';
+                    }
+                } else {
+                    console.error('Failed to load user stats:', data);
                 }
             } catch (error) {
                 console.error('Error loading user stats:', error);

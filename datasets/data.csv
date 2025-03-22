@@ -1,0 +1,11 @@
+event_time,order_id,product_id,category_id,category_code,brand,price,user_id,packaging_material,shipping_mode,usage_duration,repairability_score
+2022-01-01 10:30:00,1001,p123,c001,electronics.laptop,Dell,1200.50,u001,plastic,road,5 years,7
+2022-01-02 14:15:00,1002,p124,c001,electronics.laptop,Apple,1800.00,u002,cardboard,air,4 years,5
+2022-01-03 09:45:00,1003,p125,c002,electronics.smartphone,Samsung,800.75,u003,plastic,road,3 years,4
+2022-01-04 16:20:00,1004,p126,c002,electronics.smartphone,Apple,1100.25,u001,cardboard,air,2 years,6
+2022-01-05 11:10:00,1005,p127,c003,home.appliance,LG,450.00,u004,plastic,road,7 years,8
+2022-01-06 13:30:00,1006,p128,c003,home.appliance,Samsung,350.50,u002,cardboard,road,6 years,7
+2022-01-07 15:45:00,1007,p129,c004,electronics.tablet,Lenovo,600.25,u003,plastic,air,4 years,6
+2022-01-08 10:00:00,1008,p130,c004,electronics.tablet,Apple,950.00,u005,cardboard,air,3 years,5
+2022-01-09 12:20:00,1009,p131,c005,electronics.headphone,Sony,180.50,u001,plastic,road,2 years,4
+2022-01-10 17:30:00,1010,p132,c005,electronics.headphone,Bose,250.75,u004,cardboard,road,3 years,3 

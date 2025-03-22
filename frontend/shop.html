@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoSmart Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2ecc71;
+            --secondary-color: #27ae60;
+            --accent-color: #16a085;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #27ae60;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            padding: 12px 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 24px;
+            color: white !important;
+        }
+        
+        .product-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .product-img {
+            height: 200px;
+            object-fit: contain;
+            padding: 20px;
+        }
+        
+        .eco-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        
+        .btn-eco {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-eco:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+            color: white;
+        }
+        
+        .cart-icon {
+            position: relative;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-leaf me-2"></i>EcoSmart Shop
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="shop.html">Shop</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">About</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="cart-icon me-3">
+                        <a href="#" class="text-white" id="cartButton">
+                            <i class="fas fa-shopping-cart fa-lg"></i>
+                            <span class="cart-count" id="cartCount">0</span>
+                        </a>
+                    </div>
+                    <a href="#" class="text-white me-3">
+                        <i class="fas fa-user fa-lg"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-5">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2>Shop Eco-Friendly Products</h2>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="d-flex justify-content-md-end align-items-center">
+                    <div class="me-3">
+                        <span id="userScore" class="badge bg-success px-3 py-2">
+                            <i class="fas fa-leaf me-1"></i>
+                            Eco Score: <span id="ecoScoreValue">0</span>
+                        </span>
+                    </div>
+                    <div>
+                        <span id="userStreak" class="badge bg-primary px-3 py-2">
+                            <i class="fas fa-fire me-1"></i>
+                            Streak: <span id="streakValue">0</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="row" id="productsContainer">
+            <!-- Products will be added here via JavaScript -->
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Loading products...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping Cart Modal -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cartModalLabel">
+                        <i class="fas fa-shopping-cart me-2"></i>Your Shopping Cart
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="cartItems">
+                        <p class="text-center text-muted">Your cart is empty.</p>
+                    </div>
+                    <div id="cartSummary" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Items:</span>
+                            <span id="cartItemCount">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total:</span>
+                            <span id="cartTotal">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Carbon Footprint:</span>
+                            <span id="cartFootprint">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
+                    <button type="button" class="btn btn-eco" id="analyzeCartBtn">
+                        <i class="fas fa-leaf me-2"></i>Analyze Environmental Impact
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Product database with carbon footprint scores
+        const products = [
+            {
+                id: 1,
+                name: "Dell XPS 13 Laptop",
+                category: "electronics.laptop",
+                brand: "dell",
+                price: 1299,
+                image: "https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/xps-notebooks/xps-13-9315/media-gallery/blue/laptop-xps-9315-t-blue-gallery-1.psd?fmt=png-alpha&pscan=auto&scl=1&wid=3319&hei=2405&qlt=100,1&resMode=sharp2&size=3319,2405&chrss=full&imwidth=5000",
+                cf_score: 60,
+                description: "Powerful and eco-friendly laptop with efficient power management."
+            },
+            {
+                id: 2,
+                name: "HP Envy 13",
+                category: "electronics.laptop",
+                brand: "hp",
+                price: 1099,
+                image: "https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c07960498.png",
+                cf_score: 55,
+                description: "Energy-efficient laptop made with recycled materials."
+            },
+            {
+                id: 3,
+                name: "Samsung Galaxy S22",
+                category: "electronics.smartphone",
+                brand: "samsung",
+                price: 899,
+                image: "https://images.samsung.com/is/image/samsung/p6pim/levant/sm-s901elvdmea/gallery/levant-galaxy-s22-s901-sm-s901elvdmea-531230889?$650_519_PNG$",
+                cf_score: 60,
+                description: "Feature-rich smartphone with eco-friendly packaging."
+            },
+            {
+                id: 4,
+                name: "Google Pixel 7",
+                category: "electronics.smartphone",
+                brand: "google",
+                price: 699,
+                image: "https://lh3.googleusercontent.com/9XWpqwlxJVe7O-eVya09wkojFhobaBJTnHhZLr0OaLMH2yBiTYPBv3EFxLhQyC_FyaMG4NG7rbeFIpEsA-k3ZUNZBzRkPgzAAdY=rw-e365-w2880",
+                cf_score: 55,
+                description: "Made with recycled aluminum with carbon-neutral manufacturing."
+            },
+            {
+                id: 5,
+                name: "Sony WH-1000XM4",
+                category: "electronics.headphone",
+                brand: "sony",
+                price: 349,
+                image: "https://electronics.sony.com/image/6f5ab98c4b0749b7bf25e02fb01d1bc0?fmt=png-alpha&wid=720&hei=720",
+                cf_score: 60,
+                description: "Premium noise-canceling headphones with long-lasting battery."
+            },
+            {
+                id: 6,
+                name: "Bose QuietComfort 45",
+                category: "electronics.headphone",
+                brand: "bose",
+                price: 329,
+                image: "https://assets.bose.com/content/dam/cloudassets/Bose_DAM/Web/consumer_electronics/global/products/headphones/qc45/product_silo_images/QC45_Black_1200x1022_hero.png/jcr:content/renditions/cq5dam.web.1280.1280.png",
+                cf_score: 50,
+                description: "Comfortable headphones with recyclable packaging."
+            }
+        ];
+
+        // Shopping cart
+        let cart = [];
+        let userId = "45"; // Default user ID
+
+        // Function to display products
+        function displayProducts() {
+            const productsContainer = document.getElementById('productsContainer');
+            let productsHTML = '';
+
+            products.forEach(product => {
+                // Determine badge color based on CF score
+                let badgeClass = 'bg-success';
+                let categoryText = 'Low Impact';
+                
+                if (product.cf_score >= 70) {
+                    badgeClass = 'bg-danger';
+                    categoryText = 'High Impact';
+                } else if (product.cf_score >= 40) {
+                    badgeClass = 'bg-warning text-dark';
+                    categoryText = 'Medium Impact';
+                }
+
+                productsHTML += `
+                    <div class="col-md-4 mb-4">
+                        <div class="card product-card h-100">
+                            <span class="eco-badge badge ${badgeClass}" title="Carbon Footprint Score">
+                                CF: ${product.cf_score}
+                            </span>
+                            <img src="${product.image}" class="card-img-top product-img" alt="${product.name}">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text text-muted mb-1">${product.brand.charAt(0).toUpperCase() + product.brand.slice(1)}</p>
+                                <p class="card-text">${product.description}</p>
+                                <div class="mt-auto d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">$${product.price.toFixed(2)}</span>
+                                    <button class="btn btn-eco" onclick="addToCart(${product.id})">
+                                        <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            productsContainer.innerHTML = productsHTML;
+        }
+
+        // Function to add product to cart
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            
+            if (product) {
+                // Check if product is already in cart
+                const existingItem = cart.find(item => item.id === productId);
+                
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({
+                        ...product,
+                        quantity: 1
+                    });
+                }
+                
+                // Update cart UI
+                updateCartUI();
+                
+                // Show success toast
+                showToast(`Added ${product.name} to cart!`);
+            }
+        }
+
+        // Function to remove item from cart
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartUI();
+        }
+
+        // Function to update cart UI
+        function updateCartUI() {
+            const cartCountElement = document.getElementById('cartCount');
+            const cartItemsElement = document.getElementById('cartItems');
+            const cartSummaryElement = document.getElementById('cartSummary');
+            const cartItemCountElement = document.getElementById('cartItemCount');
+            const cartTotalElement = document.getElementById('cartTotal');
+            const cartFootprintElement = document.getElementById('cartFootprint');
+            
+            // Update cart count
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            cartCountElement.textContent = totalItems;
+            
+            // Update cart items
+            if (cart.length === 0) {
+                cartItemsElement.innerHTML = '<p class="text-center text-muted">Your cart is empty.</p>';
+                cartSummaryElement.style.display = 'none';
+            } else {
+                // Calculate totals
+                const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+                const totalCF = cart.reduce((total, item) => total + (item.cf_score * item.quantity), 0);
+                
+                // Generate cart items HTML
+                let cartItemsHTML = '';
+                
+                cart.forEach(item => {
+                    cartItemsHTML += `
+                        <div class="d-flex align-items-center mb-3 p-2 border-bottom">
+                            <img src="${item.image}" alt="${item.name}" style="width: 60px; height: 60px; object-fit: contain;">
+                            <div class="ms-3 flex-grow-1">
+                                <h6 class="mb-0">${item.name}</h6>
+                                <div class="small text-muted">$${item.price.toFixed(2)} x ${item.quantity}</div>
+                            </div>
+                            <div class="ms-auto me-3">
+                                <span class="badge bg-light text-dark">CF: ${item.cf_score * item.quantity}</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${item.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                cartItemsElement.innerHTML = cartItemsHTML;
+                cartSummaryElement.style.display = 'block';
+                cartItemCountElement.textContent = totalItems;
+                cartTotalElement.textContent = '$' + totalPrice.toFixed(2);
+                cartFootprintElement.textContent = totalCF;
+            }
+            
+            // Save cart to local storage
+            localStorage.setItem('ecosmartCart', JSON.stringify(cart));
+        }
+
+        // Function to show toast message
+        function showToast(message) {
+            // Create toast element
+            const toastElement = document.createElement('div');
+            toastElement.className = 'toast show position-fixed bottom-0 end-0 m-3';
+            toastElement.style.zIndex = '9999';
+            toastElement.style.backgroundColor = 'white';
+            toastElement.innerHTML = `
+                <div class="toast-header">
+                    <i class="fas fa-leaf text-success me-2"></i>
+                    <strong class="me-auto">EcoSmart Shop</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            `;
+            
+            // Add to document
+            document.body.appendChild(toastElement);
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                toastElement.remove();
+            }, 3000);
+        }
+
+        // Function to load user streaks from API or local storage
+        async function loadUserStats() {
+            try {
+                // Try to fetch from API first
+                const API_URL = 'http://localhost:8000';
+                const response = await fetch(`${API_URL}/user-streak/${userId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('streakValue').textContent = result.streak;
+                    document.getElementById('ecoScoreValue').textContent = result.credits;
+                    return;
+                }
+            } catch (error) {
+                console.warn('Could not load from API, using local data', error);
+            }
+            
+            // Fallback to hardcoded data from user_streaks.json (which we know is {"45": 11, "25": 0})
+            const userStreaks = {"45": 11, "25": 0};
+            const streak = userStreaks[userId] || 0;
+            const credits = Math.floor(streak / 5) * 100;
+            
+            document.getElementById('streakValue').textContent = streak;
+            document.getElementById('ecoScoreValue').textContent = credits;
+        }
+
+        // Function to analyze cart and provide recommendations
+        function analyzeCart() {
+            if (cart.length === 0) {
+                showToast('Add items to your cart first!');
+                return;
+            }
+            
+            // Get item with highest CF score
+            const worstItem = [...cart].sort((a, b) => b.cf_score - a.cf_score)[0];
+            
+            // Find better alternative
+            const alternatives = products.filter(p => 
+                p.category === worstItem.category && 
+                p.brand !== worstItem.brand && 
+                p.cf_score < worstItem.cf_score
+            ).sort((a, b) => a.cf_score - b.cf_score);
+            
+            // Create recommendation modal
+            const recommendationModal = new bootstrap.Modal(document.createElement('div'));
+            const modalElement = recommendationModal._element;
+            modalElement.className = 'modal fade';
+            modalElement.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-leaf me-2"></i>Environmental Impact Analysis
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>${worstItem.name}</strong> has the highest environmental impact in your cart (CF: ${worstItem.cf_score}).
+                            </div>
+                            
+                            ${alternatives.length > 0 ? `
+                                <h5 class="mt-4">Recommended Alternatives:</h5>
+                                <div class="row mt-3">
+                                    ${alternatives.slice(0, 2).map(alt => `
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex">
+                                                        <img src="${alt.image}" alt="${alt.name}" style="width: 80px; height: 80px; object-fit: contain;">
+                                                        <div class="ms-3">
+                                                            <h5 class="card-title">${alt.name}</h5>
+                                                            <p class="card-text mb-1">
+                                                                <span class="badge bg-success">CF: ${alt.cf_score}</span>
+                                                                <span class="ms-2 text-success">
+                                                                    <i class="fas fa-arrow-down"></i> 
+                                                                    ${worstItem.cf_score - alt.cf_score} points
+                                                                </span>
+                                                            </p>
+                                                            <p class="card-text text-muted">${alt.description}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-white">
+                                                    <button class="btn btn-sm btn-eco w-100" onclick="swapCartItem(${worstItem.id}, ${alt.id})">
+                                                        <i class="fas fa-exchange-alt me-2"></i>Swap Item
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Swapping to a more eco-friendly alternative will increase your sustainable purchase streak!
+                                </div>
+                            ` : `
+                                <div class="alert alert-success mt-3">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Good news! You've already selected the most eco-friendly options in this category.
+                                </div>
+                            `}
+                            
+                            <h5 class="mt-4">Total Cart Environmental Impact:</h5>
+                            <div class="progress mt-2 mb-3" style="height: 20px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                    style="width: ${Math.min(cart.reduce((total, item) => total + item.cf_score * item.quantity, 0) / 10, 100)}%">
+                                    ${cart.reduce((total, item) => total + item.cf_score * item.quantity, 0)} CF points
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
+                            <button type="button" class="btn btn-eco" onclick="checkout()">
+                                <i class="fas fa-check me-2"></i>Proceed to Checkout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add to document and show
+            document.body.appendChild(modalElement);
+            recommendationModal.show();
+            
+            // Handle cleanup when modal is closed
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                modalElement.remove();
+            });
+        }
+
+        // Function to swap an item in the cart with an alternative
+        function swapCartItem(oldItemId, newItemId) {
+            // Find the existing item
+            const oldItem = cart.find(item => item.id === oldItemId);
+            if (!oldItem) return;
+            
+            // Get the quantity
+            const quantity = oldItem.quantity;
+            
+            // Remove the old item
+            removeFromCart(oldItemId);
+            
+            // Add the new item with the same quantity
+            const newItem = products.find(p => p.id === newItemId);
+            if (newItem) {
+                cart.push({
+                    ...newItem,
+                    quantity: quantity
+                });
+                
+                // Update user streak for choosing eco-friendly
+                updateUserStreak(true);
+                
+                // Update UI
+                updateCartUI();
+                
+                // Show success message
+                showToast(`Great choice! Swapped to more eco-friendly ${newItem.name}`);
+                
+                // Close all modals
+                document.querySelectorAll('.modal').forEach(modal => {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                });
+            }
+        }
+
+        // Function to update user streak
+        function updateUserStreak(ecoFriendly) {
+            // Get current streak
+            let currentStreak = parseInt(document.getElementById('streakValue').textContent) || 0;
+            
+            if (ecoFriendly) {
+                // Increment streak
+                currentStreak += 1;
+            } else {
+                // Reset streak
+                currentStreak = 0;
+            }
+            
+            // Update UI
+            document.getElementById('streakValue').textContent = currentStreak;
+            
+            // Calculate credits
+            const credits = Math.floor(currentStreak / 5) * 100;
+            document.getElementById('ecoScoreValue').textContent = credits;
+            
+            // Save to local storage
+            const userStreaks = {"45": currentStreak, "25": 0};
+            localStorage.setItem('userStreaks', JSON.stringify(userStreaks));
+            
+            // Try to update API if available
+            try {
+                fetch('http://localhost:8000/submit-purchase-choice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        product_id: "sample_product",
+                        choice: ecoFriendly ? 'ai_suggested' : 'original'
+                    })
+                }).catch(err => console.log('API update failed, using local only'));
+            } catch (error) {
+                console.log('API update error, using local only');
+            }
+        }
+
+        // Function to proceed to checkout
+        function checkout() {
+            if (cart.length === 0) return;
+            
+            // Create checkout modal
+            const checkoutModal = new bootstrap.Modal(document.createElement('div'));
+            const modalElement = checkoutModal._element;
+            modalElement.className = 'modal fade';
+            modalElement.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-shopping-bag me-2"></i>Checkout
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Thank you for your eco-friendly purchase!
+                            </div>
+                            <p>Your order has been placed and your sustainable purchase streak has been updated.</p>
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="fas fa-fire text-warning"></i> Your current streak:
+                                </div>
+                                <div class="fw-bold">${parseInt(document.getElementById('streakValue').textContent) + 1}</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add to document and show
+            document.body.appendChild(modalElement);
+            checkoutModal.show();
+            
+            // Handle cleanup when modal is closed
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                modalElement.remove();
+                
+                // Update streak and clear cart
+                updateUserStreak(true);
+                cart = [];
+                updateCartUI();
+                
+                // Redirect back to main page
+                //window.location.href = 'index.html';
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Display products
+            displayProducts();
+            
+            // Load user stats
+            loadUserStats();
+            
+            // Load cart from local storage
+            const savedCart = localStorage.getItem('ecosmartCart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                updateCartUI();
+            }
+            
+            // Set up cart button
+            document.getElementById('cartButton').addEventListener('click', function(e) {
+                e.preventDefault();
+                new bootstrap.Modal(document.getElementById('cartModal')).show();
+            });
+            
+            // Set up analyze button
+            document.getElementById('analyzeCartBtn').addEventListener('click', function() {
+                analyzeCart();
+                bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
+            });
+        });
+    </script>
+</body>
+</html> 

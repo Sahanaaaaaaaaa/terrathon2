@@ -291,6 +291,15 @@
                     <div class="card-body">
                         <form id="cfCalculatorForm">
                             <div class="mb-3">
+                                <label for="userId" class="form-label">User ID</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="userId" placeholder="Enter your user ID" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
                                 <label for="category" class="form-label">Product Category</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light">
@@ -584,6 +593,64 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Purchase History Visualization -->
+                        <div id="purchaseHistorySection" style="display: none;" class="mt-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <hr class="flex-grow-1">
+                                <div class="badge bg-info mx-2 px-3 py-2">PURCHASE HISTORY</div>
+                                <hr class="flex-grow-1">
+                            </div>
+                            
+                            <div class="card border-info mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3"><i class="fas fa-history me-2"></i>Your Carbon Footprint History</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="chart-container" style="position: relative; height:250px;">
+                                                <canvas id="purchaseHistoryChart"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card bg-light border-0">
+                                                <div class="card-body">
+                                                    <h6 class="fw-bold mb-3">Insights</h6>
+                                                    <div id="historyInsights"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3"><i class="fas fa-chart-line me-2"></i>Category Breakdown</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="chart-container" style="position: relative; height:250px;">
+                                                <canvas id="categoryBreakdownChart"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Category</th>
+                                                            <th>Purchases</th>
+                                                            <th>Avg. CF</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="categoryBreakdownTable">
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -673,6 +740,377 @@
         // Base API URL - update with your actual backend URL
         const API_URL = 'http://localhost:8000';
         
+        // Mock user purchase history database
+        const userPurchaseHistory = {
+            'user123': [
+                { 
+                    date: '2023-01-15', 
+                    category: 'electronics.laptop', 
+                    brand: 'apple', 
+                    cf_score: 85,
+                    price: 1299
+                },
+                { 
+                    date: '2023-02-20', 
+                    category: 'electronics.smartphone', 
+                    brand: 'samsung', 
+                    cf_score: 70,
+                    price: 899
+                },
+                { 
+                    date: '2023-04-10', 
+                    category: 'electronics.headphone', 
+                    brand: 'bose', 
+                    cf_score: 70,
+                    price: 299
+                },
+                { 
+                    date: '2023-06-05', 
+                    category: 'electronics.tablet', 
+                    brand: 'apple', 
+                    cf_score: 75,
+                    price: 799
+                },
+                { 
+                    date: '2023-08-15', 
+                    category: 'home.appliance', 
+                    brand: 'lg', 
+                    cf_score: 55,
+                    price: 749
+                },
+                { 
+                    date: '2023-10-20', 
+                    category: 'electronics.headphone', 
+                    brand: 'sony', 
+                    cf_score: 55,
+                    price: 249
+                },
+                { 
+                    date: '2023-12-05', 
+                    category: 'electronics.smartphone', 
+                    brand: 'google', 
+                    cf_score: 55,
+                    price: 749
+                }
+            ],
+            'user456': [
+                { 
+                    date: '2023-02-15', 
+                    category: 'electronics.laptop', 
+                    brand: 'dell', 
+                    cf_score: 60,
+                    price: 1099
+                },
+                { 
+                    date: '2023-03-10', 
+                    category: 'electronics.smartphone', 
+                    brand: 'xiaomi', 
+                    cf_score: 60,
+                    price: 499
+                },
+                { 
+                    date: '2023-05-22', 
+                    category: 'electronics.headphone', 
+                    brand: 'sennheiser', 
+                    cf_score: 45,
+                    price: 199
+                },
+                { 
+                    date: '2023-07-11', 
+                    category: 'electronics.tablet', 
+                    brand: 'lenovo', 
+                    cf_score: 55,
+                    price: 399
+                },
+                { 
+                    date: '2023-09-18', 
+                    category: 'home.appliance', 
+                    brand: 'bosch', 
+                    cf_score: 50,
+                    price: 899
+                }
+            ]
+        };
+        
+        // Purchase history chart instances
+        let purchaseHistoryChart = null;
+        let categoryBreakdownChart = null;
+        
+        // Product Database for comparing alternatives
+        const productDatabase = {
+            'electronics.laptop': {
+                'apple': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'air',
+                    usage_duration: '4 years',
+                    repairability_score: 3,
+                    cf_score: 85
+                },
+                'dell': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '5 years',
+                    repairability_score: 7,
+                    cf_score: 60
+                },
+                'hp': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '4 years',
+                    repairability_score: 8,
+                    cf_score: 55
+                },
+                'lenovo': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'sea',
+                    usage_duration: '5 years',
+                    repairability_score: 8,
+                    cf_score: 50
+                },
+                'asus': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'air',
+                    usage_duration: '4 years',
+                    repairability_score: 6,
+                    cf_score: 65
+                }
+            },
+            'electronics.smartphone': {
+                'apple': {
+                    packaging_material: 'paper',
+                    shipping_mode: 'air',
+                    usage_duration: '3 years',
+                    repairability_score: 2,
+                    cf_score: 80
+                },
+                'samsung': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'air',
+                    usage_duration: '3 years',
+                    repairability_score: 4,
+                    cf_score: 70
+                },
+                'google': {
+                    packaging_material: 'biodegradable',
+                    shipping_mode: 'road',
+                    usage_duration: '3 years',
+                    repairability_score: 6,
+                    cf_score: 55
+                },
+                'xiaomi': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'sea',
+                    usage_duration: '2 years',
+                    repairability_score: 5,
+                    cf_score: 60
+                },
+                'honor': {
+                    packaging_material: 'plastic',
+                    shipping_mode: 'air',
+                    usage_duration: '2 years',
+                    repairability_score: 3,
+                    cf_score: 75
+                }
+            },
+            'electronics.tablet': {
+                'apple': {
+                    packaging_material: 'paper',
+                    shipping_mode: 'air',
+                    usage_duration: '4 years',
+                    repairability_score: 2,
+                    cf_score: 75
+                },
+                'samsung': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'air',
+                    usage_duration: '3 years',
+                    repairability_score: 3,
+                    cf_score: 70
+                },
+                'lenovo': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '4 years',
+                    repairability_score: 6,
+                    cf_score: 55
+                },
+                'microsoft': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '5 years',
+                    repairability_score: 4,
+                    cf_score: 65
+                }
+            },
+            'electronics.headphone': {
+                'apple': {
+                    packaging_material: 'plastic',
+                    shipping_mode: 'air',
+                    usage_duration: '3 years',
+                    repairability_score: 1,
+                    cf_score: 85
+                },
+                'sony': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '5 years',
+                    repairability_score: 5,
+                    cf_score: 55
+                },
+                'bose': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'air',
+                    usage_duration: '4 years',
+                    repairability_score: 4,
+                    cf_score: 70
+                },
+                'sennheiser': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '7 years',
+                    repairability_score: 7,
+                    cf_score: 45
+                }
+            },
+            'home.appliance': {
+                'samsung': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '7 years',
+                    repairability_score: 6,
+                    cf_score: 60
+                },
+                'lg': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'sea',
+                    usage_duration: '7 years',
+                    repairability_score: 7,
+                    cf_score: 55
+                },
+                'bosch': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'road',
+                    usage_duration: '6 years',
+                    repairability_score: 8,
+                    cf_score: 50
+                },
+                'miele': {
+                    packaging_material: 'cardboard',
+                    shipping_mode: 'rail',
+                    usage_duration: '7 years',
+                    repairability_score: 9,
+                    cf_score: 40
+                }
+            }
+        };
+        
+        // Material weights for CF calculation
+        const packagingWeights = {
+            'plastic': 25,
+            'cardboard': 10,
+            'paper': 5,
+            'glass': 20,
+            'metal': 30,
+            'biodegradable': 2
+        };
+        
+        // Shipping mode weights
+        const shippingWeights = {
+            'air': 30,
+            'road': 15,
+            'rail': 10,
+            'sea': 5,
+            'local': 2
+        };
+        
+        // Usage duration impact (inverse - longer is better)
+        const durationImpact = {
+            '1 year': 25,
+            '2 years': 20,
+            '3 years': 15,
+            '4 years': 10,
+            '5 years': 5,
+            '6 years': 2,
+            '7 years': 1
+        };
+        
+        // Calculate CF based on input parameters
+        function calculateCarbonFootprint(data) {
+            // Use product data from database if available
+            const categoryProducts = productDatabase[data.category_code] || {};
+            const brandData = categoryProducts[data.brand];
+            
+            if (brandData) {
+                // If we have pre-defined data for this brand and category
+                return {
+                    cf_score: brandData.cf_score,
+                    cf_category: getCategoryFromScore(brandData.cf_score)
+                };
+            }
+            
+            // Calculate based on input parameters if not in database
+            const packagingImpact = packagingWeights[data.packaging_material] || 15;
+            const shippingImpact = shippingWeights[data.shipping_mode] || 15;
+            const durationFactor = durationImpact[data.usage_duration] || 15;
+            const repairabilityFactor = 11 - data.repairability_score; // Invert scale so 10 is good, 1 is bad
+            
+            // Base score from 0-100, higher is worse for environment
+            let cfScore = 
+                packagingImpact * 1.2 + 
+                shippingImpact * 1.5 + 
+                durationFactor * 1.0 + 
+                repairabilityFactor * 2.5;
+            
+            // Price factor - more expensive items often have higher carbon footprint
+            const priceFactor = Math.min(data.price / 500, 1) * 10;
+            cfScore += priceFactor;
+            
+            // Cap the score at 100
+            cfScore = Math.min(Math.round(cfScore), 100);
+            
+            return {
+                cf_score: cfScore,
+                cf_category: getCategoryFromScore(cfScore)
+            };
+        }
+        
+        // Get category based on score
+        function getCategoryFromScore(score) {
+            if (score >= 70) return 'High CF';
+            if (score >= 40) return 'Medium CF';
+            return 'Low CF';
+        }
+        
+        // Find alternative brands with better CF scores
+        function findAlternatives(category, currentBrand) {
+            const categoryProducts = productDatabase[category] || {};
+            if (!categoryProducts || Object.keys(categoryProducts).length === 0) {
+                return [];
+            }
+            
+            // Get current brand's score
+            const currentBrandData = categoryProducts[currentBrand];
+            if (!currentBrandData) {
+                return [];
+            }
+            
+            const currentScore = currentBrandData.cf_score;
+            
+            // Find alternatives with better (lower) CF scores
+            return Object.entries(categoryProducts)
+                .filter(([brand, data]) => brand !== currentBrand && data.cf_score < currentScore)
+                .sort((a, b) => a[1].cf_score - b[1].cf_score)
+                .map(([brand, data]) => ({
+                    brand: brand,
+                    cf_score: data.cf_score,
+                    cf_improvement: currentScore - data.cf_score,
+                    packaging_material: data.packaging_material,
+                    shipping_mode: data.shipping_mode,
+                    usage_duration: data.usage_duration,
+                    repairability_score: data.repairability_score
+                }));
+        }
+        
         // Show value of slider
         const repairabilitySlider = document.getElementById('repairabilityScore');
         repairabilitySlider.addEventListener('input', function() {
@@ -688,7 +1126,9 @@
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Calculating...';
             submitBtn.disabled = true;
             
+            const userId = document.getElementById('userId').value;
             const productData = {
+                user_id: userId,
                 category_code: document.getElementById('category').value,
                 brand: document.getElementById('brand').value,
                 price: parseFloat(document.getElementById('price').value),
@@ -699,19 +1139,15 @@
             };
             
             try {
-                const response = await fetch(`${API_URL}/calculate-cf`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(productData)
-                });
+                // Calculate carbon footprint locally
+                const result = calculateCarbonFootprint(productData);
                 
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                
-                const result = await response.json();
+                // Store result for recommendations
+                window.lastCalculation = {
+                    ...productData,
+                    cf_score: result.cf_score,
+                    cf_category: result.cf_category
+                };
                 
                 // Display results with animation
                 document.getElementById('resultsSection').style.display = 'block';
@@ -748,6 +1184,20 @@
                 
                 document.getElementById('cfCategory').textContent = cfCategory;
                 
+                // Find alternatives and pre-fill recommendation form
+                if (document.getElementById('recommendationsForm')) {
+                    const userIdFields = document.querySelectorAll('#recommendationsForm #userId');
+                    if (userIdFields.length > 0) {
+                        userIdFields[0].value = productData.user_id;
+                    }
+                }
+                
+                // Generate purchase history visualization if user exists in database
+                if (userPurchaseHistory[userId]) {
+                    generatePurchaseHistoryVisualizations(userId);
+                    document.getElementById('purchaseHistorySection').style.display = 'block';
+                }
+                
                 // Scroll to results
                 document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 
@@ -761,6 +1211,271 @@
             }
         });
         
+        // Function to generate visualizations for purchase history
+        function generatePurchaseHistoryVisualizations(userId) {
+            const purchaseData = userPurchaseHistory[userId] || [];
+            if (purchaseData.length === 0) return;
+            
+            // Sort purchases by date
+            purchaseData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Generate timeline chart
+            generateTimelineChart(purchaseData);
+            
+            // Generate category breakdown chart
+            generateCategoryBreakdownChart(purchaseData);
+            
+            // Generate insights
+            generateInsights(purchaseData);
+        }
+        
+        // Function to generate timeline chart
+        function generateTimelineChart(purchaseData) {
+            const ctx = document.getElementById('purchaseHistoryChart').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (purchaseHistoryChart) {
+                purchaseHistoryChart.destroy();
+            }
+            
+            // Extract dates and CF scores
+            const labels = purchaseData.map(item => {
+                const date = new Date(item.date);
+                return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear().toString().substr(-2)}`;
+            });
+            
+            const cfScores = purchaseData.map(item => item.cf_score);
+            
+            // Create new chart
+            purchaseHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Carbon Footprint Score',
+                        data: cfScores,
+                        backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                        borderColor: 'rgb(46, 204, 113)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: 'rgb(46, 204, 113)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'CF Score (lower is better)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Purchase Date'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const purchase = purchaseData[context.dataIndex];
+                                    const categoryParts = purchase.category.split('.');
+                                    const category = categoryParts[1].charAt(0).toUpperCase() + categoryParts[1].slice(1);
+                                    const brand = purchase.brand.charAt(0).toUpperCase() + purchase.brand.slice(1);
+                                    
+                                    return [
+                                        `CF Score: ${purchase.cf_score}`,
+                                        `Product: ${brand} ${category}`,
+                                        `Price: $${purchase.price}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to generate category breakdown chart
+        function generateCategoryBreakdownChart(purchaseData) {
+            const ctx = document.getElementById('categoryBreakdownChart').getContext('2d');
+            
+            // Destroy previous chart if it exists
+            if (categoryBreakdownChart) {
+                categoryBreakdownChart.destroy();
+            }
+            
+            // Process data by category
+            const categoryCounts = {};
+            const categoryTotals = {};
+            
+            purchaseData.forEach(purchase => {
+                const categoryParts = purchase.category.split('.');
+                const category = categoryParts[1].charAt(0).toUpperCase() + categoryParts[1].slice(1);
+                
+                if (!categoryCounts[category]) {
+                    categoryCounts[category] = 0;
+                    categoryTotals[category] = 0;
+                }
+                
+                categoryCounts[category]++;
+                categoryTotals[category] += purchase.cf_score;
+            });
+            
+            const categories = Object.keys(categoryCounts);
+            const counts = Object.values(categoryCounts);
+            
+            // Calculate average CF score per category
+            const avgScores = {};
+            categories.forEach(category => {
+                avgScores[category] = Math.round(categoryTotals[category] / categoryCounts[category]);
+            });
+            
+            // Populate the table
+            const tableBody = document.getElementById('categoryBreakdownTable');
+            tableBody.innerHTML = '';
+            
+            categories.forEach(category => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${category}</td>
+                    <td>${categoryCounts[category]}</td>
+                    <td>
+                        <span class="badge ${getCategoryClass(getCategoryFromScore(avgScores[category]))}">${avgScores[category]}</span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Chart colors
+            const backgroundColors = [
+                'rgba(46, 204, 113, 0.7)',
+                'rgba(52, 152, 219, 0.7)',
+                'rgba(155, 89, 182, 0.7)',
+                'rgba(241, 196, 15, 0.7)',
+                'rgba(230, 126, 34, 0.7)'
+            ];
+            
+            // Create new chart
+            categoryBreakdownChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: backgroundColors.slice(0, categories.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const category = context.label;
+                                    const count = context.raw;
+                                    const percentage = Math.round((count / purchaseData.length) * 100);
+                                    const avgScore = avgScores[category];
+                                    
+                                    return [
+                                        `${category}: ${count} purchases (${percentage}%)`,
+                                        `Avg. CF Score: ${avgScore}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to generate insights from purchase history
+        function generateInsights(purchaseData) {
+            const insightsContainer = document.getElementById('historyInsights');
+            
+            // Calculate trends and insights
+            const totalPurchases = purchaseData.length;
+            const avgCfScore = Math.round(purchaseData.reduce((sum, item) => sum + item.cf_score, 0) / totalPurchases);
+            
+            // Check if CF score is improving
+            const firstHalf = purchaseData.slice(0, Math.floor(totalPurchases / 2));
+            const secondHalf = purchaseData.slice(Math.floor(totalPurchases / 2));
+            
+            const firstHalfAvg = Math.round(firstHalf.reduce((sum, item) => sum + item.cf_score, 0) / firstHalf.length);
+            const secondHalfAvg = Math.round(secondHalf.reduce((sum, item) => sum + item.cf_score, 0) / secondHalf.length);
+            
+            const improving = secondHalfAvg < firstHalfAvg;
+            const improvementPercent = Math.round(Math.abs((secondHalfAvg - firstHalfAvg) / firstHalfAvg * 100));
+            
+            // Most recent purchase
+            const recentPurchase = purchaseData[purchaseData.length - 1];
+            const recentCategory = recentPurchase.category.split('.')[1].charAt(0).toUpperCase() + recentPurchase.category.split('.')[1].slice(1);
+            const recentBrand = recentPurchase.brand.charAt(0).toUpperCase() + recentPurchase.brand.slice(1);
+            
+            // Find best and worst purchases
+            const bestPurchase = [...purchaseData].sort((a, b) => a.cf_score - b.cf_score)[0];
+            const worstPurchase = [...purchaseData].sort((a, b) => b.cf_score - a.cf_score)[0];
+            
+            const bestCategory = bestPurchase.category.split('.')[1].charAt(0).toUpperCase() + bestPurchase.category.split('.')[1].slice(1);
+            const bestBrand = bestPurchase.brand.charAt(0).toUpperCase() + bestPurchase.brand.slice(1);
+            
+            const worstCategory = worstPurchase.category.split('.')[1].charAt(0).toUpperCase() + worstPurchase.category.split('.')[1].slice(1);
+            const worstBrand = worstPurchase.brand.charAt(0).toUpperCase() + worstPurchase.brand.slice(1);
+            
+            // Build insights HTML
+            let insightsHtml = `
+                <div class="mb-3">
+                    <i class="fas fa-calculator me-2 text-info"></i>
+                    <strong>Total Purchases:</strong> ${totalPurchases}
+                </div>
+                
+                <div class="mb-3">
+                    <i class="fas fa-chart-pie me-2 text-info"></i>
+                    <strong>Average CF Score:</strong> 
+                    <span class="badge ${getCategoryClass(getCategoryFromScore(avgCfScore))}">${avgCfScore}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <i class="fas ${improving ? 'fa-arrow-trend-down text-success' : 'fa-arrow-trend-up text-danger'} me-2"></i>
+                    <strong>Trend:</strong> 
+                    ${improving ? 
+                        `<span class="text-success">Improving by ${improvementPercent}%</span>` : 
+                        `<span class="text-danger">Worsening by ${improvementPercent}%</span>`
+                    }
+                </div>
+                
+                <div class="mb-3">
+                    <i class="fas fa-award me-2 text-success"></i>
+                    <strong>Best Purchase:</strong> 
+                    ${bestBrand} ${bestCategory} 
+                    <small class="badge ${getCategoryClass(getCategoryFromScore(bestPurchase.cf_score))}">${bestPurchase.cf_score}</small>
+                </div>
+                
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                    <strong>Highest Impact:</strong> 
+                    ${worstBrand} ${worstCategory} 
+                    <small class="badge ${getCategoryClass(getCategoryFromScore(worstPurchase.cf_score))}">${worstPurchase.cf_score}</small>
+                </div>
+            `;
+            
+            insightsContainer.innerHTML = insightsHtml;
+        }
+        
         document.getElementById('recommendationsForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -771,25 +1486,30 @@
             submitBtn.disabled = true;
             
             const userData = {
-                user_id: document.getElementById('userId').value,
-                product_id: document.getElementById('productId').value,
-                brand: document.getElementById('brand').value
+                user_id: document.getElementById('recommendationsForm').querySelector('#userId').value,
+                product_id: document.getElementById('productId').value
             };
             
             try {
-                const response = await fetch(`${API_URL}/get-recommendations`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(userData)
-                });
+                // Get last calculation or use default values
+                const lastCalc = window.lastCalculation || {
+                    category_code: 'electronics.laptop',
+                    brand: 'apple'
+                };
                 
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                // Find alternative brands with better CF scores
+                const alternatives = findAlternatives(
+                    lastCalc.category_code,
+                    lastCalc.brand
+                );
                 
-                const result = await response.json();
+                // Simulate API response
+                const result = {
+                    user_cf_score: lastCalc.cf_score || 75,
+                    user_cf_category: lastCalc.cf_category || 'Medium CF',
+                    alternatives: alternatives,
+                    recommendations: generateRecommendations(lastCalc, alternatives)
+                };
                 
                 // Display AI recommendations with fade-in effect
                 const aiRecommendations = document.getElementById('aiRecommendations');
@@ -807,6 +1527,36 @@
                             <div>Your Carbon Score: <strong>${result.user_cf_score || 'N/A'}</strong></div>
                         </div>
                     `;
+                }
+                
+                // Add alternatives section if available
+                if (result.alternatives && result.alternatives.length > 0) {
+                    html += `<div class="mb-3">
+                        <h6 class="fw-bold">Alternative Brands with Lower Carbon Footprint:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Brand</th>
+                                        <th>CF Score</th>
+                                        <th>Improvement</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                    
+                    result.alternatives.forEach(alt => {
+                        html += `
+                            <tr>
+                                <td><strong>${alt.brand.charAt(0).toUpperCase() + alt.brand.slice(1)}</strong></td>
+                                <td><span class="badge ${getCategoryClass(getCategoryFromScore(alt.cf_score))}">${alt.cf_score}</span></td>
+                                <td><span class="text-success">-${alt.cf_improvement} points</span></td>
+                                <td><small>${alt.repairability_score}/10 repairability, ${alt.usage_duration} lifespan</small></td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `</tbody></table></div></div>`;
                 }
                 
                 html += `<div class="recommendation-text">${formatRecommendations(result.recommendations)}</div>`;
@@ -832,12 +1582,84 @@
             }
         });
         
+        function generateRecommendations(productData, alternatives) {
+            if (!productData || !productData.category_code) {
+                return "Please calculate a product's carbon footprint first to get personalized recommendations.";
+            }
+            
+            const category = productData.category_code.split('.')[1];
+            const brand = productData.brand.charAt(0).toUpperCase() + productData.brand.slice(1);
+            
+            let recommendations = `Based on your ${brand} ${category}, we have the following recommendations:\n\n`;
+            
+            // Packaging recommendations
+            if (productData.packaging_material === 'plastic') {
+                recommendations += "PACKAGING: Consider brands that use cardboard or biodegradable packaging instead of plastic. This could reduce your carbon footprint by up to 23 points.\n\n";
+            }
+            
+            // Shipping recommendations
+            if (productData.shipping_mode === 'air') {
+                recommendations += "SHIPPING: Air shipping has a significant environmental impact. Brands that use sea or rail shipping can reduce your carbon footprint by up to 25 points.\n\n";
+            }
+            
+            // Durability recommendations
+            if (productData.usage_duration && parseInt(productData.usage_duration) < 4) {
+                recommendations += "PRODUCT LIFESPAN: Consider devices designed for longer lifespans. Extending use from 2-3 years to 5+ years can dramatically reduce your overall environmental impact.\n\n";
+            }
+            
+            // Repairability recommendations
+            if (productData.repairability_score < 5) {
+                recommendations += "REPAIRABILITY: Your current device has low repairability. Products with higher repairability scores (7+) allow for component replacement rather than whole device replacement.\n\n";
+            }
+            
+            // Brand alternatives
+            if (alternatives && alternatives.length > 0) {
+                recommendations += "BRAND ALTERNATIVES:\n";
+                alternatives.forEach((alt, index) => {
+                    if (index < 3) { // Limit to top 3 alternatives
+                        const brandName = alt.brand.charAt(0).toUpperCase() + alt.brand.slice(1);
+                        recommendations += `- ${brandName}: CF score ${alt.cf_score} (${alt.cf_improvement} points lower) with ${alt.repairability_score}/10 repairability score and ${alt.usage_duration} typical lifespan.\n`;
+                    }
+                });
+                recommendations += "\n";
+            }
+            
+            recommendations += "GENERAL TIPS:\n";
+            recommendations += "- Consider buying refurbished or certified pre-owned devices\n";
+            recommendations += "- Look for Energy Star certification for electronics\n";
+            recommendations += "- Choose products with minimal packaging and plastic-free accessories\n";
+            recommendations += "- Investigate the manufacturer's commitment to renewable energy in their production process";
+            
+            return recommendations;
+        }
+        
         function formatRecommendations(text) {
             // Enhanced formatting: convert newlines to paragraphs with styling
             if (!text) return '<p>No recommendations available.</p>';
             
             return text.split('\n\n')
-                .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
+                .map(para => {
+                    // Check if this is a section heading
+                    if (para.includes(':') && para.split(':')[0] === para.split(':')[0].toUpperCase()) {
+                        const [heading, content] = para.split(':', 2);
+                        return `<h6 class="mt-3 mb-2 fw-bold">${heading}:</h6><p>${content.replace(/\n/g, '<br>')}</p>`;
+                    }
+                    
+                    // Check if this contains bullet points
+                    if (para.includes('- ')) {
+                        const lines = para.split('\n');
+                        const title = lines[0].endsWith(':') ? `<h6 class="mt-3 mb-2 fw-bold">${lines[0]}</h6>` : `<p>${lines[0]}</p>`;
+                        
+                        const bulletPoints = lines.slice(1)
+                            .filter(line => line.trim().startsWith('- '))
+                            .map(line => `<li>${line.trim().substring(2)}</li>`)
+                            .join('');
+                            
+                        return `${title}<ul class="mb-3">${bulletPoints}</ul>`;
+                    }
+                    
+                    return `<p>${para.replace(/\n/g, '<br>')}</p>`;
+                })
                 .join('');
         }
         

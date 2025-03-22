@@ -508,6 +508,12 @@
                 return;
             }
             
+            // Calculate totals and averages
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+            const totalCF = cart.reduce((total, item) => total + (item.cf_score * item.quantity), 0);
+            const avgCF = Math.round(totalCF / totalItems);
+            
             // Get item with highest CF score
             const worstItem = [...cart].sort((a, b) => b.cf_score - a.cf_score)[0];
             
@@ -518,80 +524,119 @@
                 p.cf_score < worstItem.cf_score
             ).sort((a, b) => a.cf_score - b.cf_score);
             
-            // Create recommendation modal
-            const recommendationModal = new bootstrap.Modal(document.createElement('div'));
-            const modalElement = recommendationModal._element;
+            // Create cart analysis modal with new UI
+            const analysisModal = new bootstrap.Modal(document.createElement('div'));
+            const modalElement = analysisModal._element;
             modalElement.className = 'modal fade';
             modalElement.innerHTML = `
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header bg-success text-white">
+                        <div class="modal-header">
                             <h5 class="modal-title">
-                                <i class="fas fa-leaf me-2"></i>Environmental Impact Analysis
+                                <i class="fas fa-shopping-cart me-2"></i>Your Shopping Cart Analysis
                             </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body">
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                <strong>${worstItem.name}</strong> has the highest environmental impact in your cart (CF: ${worstItem.cf_score}).
-                            </div>
-                            
-                            ${alternatives.length > 0 ? `
-                                <h5 class="mt-4">Recommended Alternatives:</h5>
-                                <div class="row mt-3">
-                                    ${alternatives.slice(0, 2).map(alt => `
-                                        <div class="col-md-6 mb-3">
-                                            <div class="card h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex">
-                                                        <img src="${alt.image}" alt="${alt.name}" style="width: 80px; height: 80px; object-fit: contain;">
-                                                        <div class="ms-3">
-                                                            <h5 class="card-title">${alt.name}</h5>
-                                                            <p class="card-text mb-1">
-                                                                <span class="badge bg-success">CF: ${alt.cf_score}</span>
-                                                                <span class="ms-2 text-success">
-                                                                    <i class="fas fa-arrow-down"></i> 
-                                                                    ${worstItem.cf_score - alt.cf_score} points
-                                                                </span>
-                                                            </p>
-                                                            <p class="card-text text-muted">${alt.description}</p>
+                        <div class="modal-body p-0">
+                            <div class="container-fluid py-4">
+                                <h3 class="text-center mb-4">Your Shopping Cart Analysis</h3>
+                                <p class="text-center text-muted mb-5">We analyzed your recent shopping cart items to calculate their environmental impact</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        <div class="card h-100">
+                                            <div class="card-header bg-success text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-shopping-cart me-2"></i>Shopping Cart Items
+                                                </h5>
+                                            </div>
+                                            <div class="card-body bg-white p-0">
+                                                ${cart.map(item => `
+                                                    <div class="d-flex p-3 border-bottom">
+                                                        <div class="border-start border-4 ${item.cf_score > 65 ? 'border-danger' : item.cf_score > 55 ? 'border-warning' : 'border-success'}" style="margin-right: 10px;"></div>
+                                                        <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: contain; margin-right: 15px;">
+                                                        <div class="flex-grow-1">
+                                                            <h5>${item.name}</h5>
+                                                            <p class="mb-1">${item.brand.charAt(0).toUpperCase() + item.brand.slice(1)} | $${item.price.toFixed(2)} | Qty: ${item.quantity}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span class="badge ${item.cf_score > 65 ? 'bg-danger' : item.cf_score > 55 ? 'bg-warning' : 'bg-success'} px-3 py-2">
+                                                                CF: ${item.cf_score}
+                                                            </span>
                                                         </div>
                                                     </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-5">
+                                        <div class="card mb-4">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-chart-pie me-2"></i>Cart Summary
+                                                </h5>
+                                            </div>
+                                            <div class="card-body bg-white">
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span>Total Items:</span>
+                                                    <span class="fw-bold">${totalItems}</span>
                                                 </div>
-                                                <div class="card-footer bg-white">
-                                                    <button class="btn btn-sm btn-eco w-100" onclick="swapCartItem(${worstItem.id}, ${alt.id})">
-                                                        <i class="fas fa-exchange-alt me-2"></i>Swap Item
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <span>Average CF Score:</span>
+                                                    <span class="fw-bold">${avgCF}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-4">
+                                                    <span>Total CF Impact:</span>
+                                                    <span class="fw-bold">${totalCF}</span>
+                                                </div>
+                                                
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                                        style="width: ${Math.min(totalCF / 3, 100)}%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="card">
+                                            <div class="card-header bg-success text-white">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-leaf me-2"></i>Sustainability Tips
+                                                </h5>
+                                            </div>
+                                            <div class="card-body bg-white">
+                                                ${worstItem ? `
+                                                    <div class="alert alert-warning">
+                                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                                        <strong>${worstItem.name}</strong> has a high environmental impact (CF: ${worstItem.cf_score}).
+                                                    </div>
+                                                ` : ''}
+                                                
+                                                ${alternatives.length > 0 ? `
+                                                    <div class="alert alert-success">
+                                                        <i class="fas fa-lightbulb me-2"></i>
+                                                        Consider <strong>${alternatives[0].brand.charAt(0).toUpperCase() + alternatives[0].brand.slice(1)}</strong> instead, with a ${worstItem.cf_score - alternatives[0].cf_score} point improvement in CF score.
+                                                    </div>
+                                                ` : ''}
+                                                
+                                                <div class="d-grid">
+                                                    <button class="btn btn-outline-success mt-3" id="findAlternativesBtn">
+                                                        <i class="fas fa-sync-alt me-2"></i>Find Eco Alternatives
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
-                                    `).join('')}
-                                </div>
-                                <div class="alert alert-info mt-3">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    Swapping to a more eco-friendly alternative will increase your sustainable purchase streak!
-                                </div>
-                            ` : `
-                                <div class="alert alert-success mt-3">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    Good news! You've already selected the most eco-friendly options in this category.
-                                </div>
-                            `}
-                            
-                            <h5 class="mt-4">Total Cart Environmental Impact:</h5>
-                            <div class="progress mt-2 mb-3" style="height: 20px;">
-                                <div class="progress-bar bg-warning" role="progressbar" 
-                                    style="width: ${Math.min(cart.reduce((total, item) => total + item.cf_score * item.quantity, 0) / 10, 100)}%">
-                                    ${cart.reduce((total, item) => total + item.cf_score * item.quantity, 0)} CF points
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
-                            <button type="button" class="btn btn-eco" onclick="checkout()">
-                                <i class="fas fa-check me-2"></i>Proceed to Checkout
-                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            ${alternatives.length > 0 ? `
+                                <button type="button" class="btn btn-success" onclick="swapCartItem(${worstItem.id}, ${alternatives[0].id})">
+                                    <i class="fas fa-exchange-alt me-2"></i>Swap to Eco-Friendly Alternative
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -599,7 +644,92 @@
             
             // Add to document and show
             document.body.appendChild(modalElement);
-            recommendationModal.show();
+            analysisModal.show();
+            
+            // Add event listener for find alternatives button
+            modalElement.querySelector('#findAlternativesBtn')?.addEventListener('click', function() {
+                // Close current modal
+                analysisModal.hide();
+                
+                // Show alternatives in a new modal
+                setTimeout(() => {
+                    showAlternativesModal(worstItem, alternatives);
+                }, 500);
+            });
+            
+            // Handle cleanup when modal is closed
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                modalElement.remove();
+            });
+        }
+
+        // Function to show alternatives modal
+        function showAlternativesModal(worstItem, alternatives) {
+            if (!worstItem || alternatives.length === 0) return;
+            
+            const alternativesModal = new bootstrap.Modal(document.createElement('div'));
+            const modalElement = alternativesModal._element;
+            modalElement.className = 'modal fade';
+            modalElement.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-leaf me-2"></i>Eco-Friendly Alternatives
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning mb-4">
+                                <div class="d-flex align-items-center">
+                                    <img src="${worstItem.image}" alt="${worstItem.name}" style="width: 50px; height: 50px; object-fit: contain; margin-right: 15px;">
+                                    <div>
+                                        <h6 class="mb-1">Currently in your cart:</h6>
+                                        <p class="mb-0">${worstItem.name} (CF: ${worstItem.cf_score})</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h5 class="mb-3">Recommended Alternatives:</h5>
+                            <div class="row">
+                                ${alternatives.slice(0, 3).map(alt => `
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center">
+                                                <img src="${alt.image}" alt="${alt.name}" style="height: 100px; object-fit: contain;" class="mb-3">
+                                                <h5 class="card-title">${alt.name}</h5>
+                                                <p class="card-text text-success mb-2">
+                                                    <i class="fas fa-leaf me-1"></i>CF: ${alt.cf_score}
+                                                    <span class="ms-2 badge bg-success">
+                                                        <i class="fas fa-arrow-down"></i> 
+                                                        ${worstItem.cf_score - alt.cf_score}
+                                                    </span>
+                                                </p>
+                                                <p class="card-text mb-3">$${alt.price.toFixed(2)}</p>
+                                                <button class="btn btn-sm btn-outline-success w-100" onclick="swapCartItem(${worstItem.id}, ${alt.id})">
+                                                    <i class="fas fa-exchange-alt me-1"></i>Swap Item
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="alert alert-info mt-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Swapping to a more eco-friendly alternative will increase your sustainable purchase streak!
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add to document and show
+            document.body.appendChild(modalElement);
+            alternativesModal.show();
             
             // Handle cleanup when modal is closed
             modalElement.addEventListener('hidden.bs.modal', function () {

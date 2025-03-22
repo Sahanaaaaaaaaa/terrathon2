@@ -209,6 +209,45 @@
         </div>
     </div>
 
+    <!-- Fixed Cart Summary Extension at Bottom -->
+    <div class="position-fixed bottom-0 end-0 mb-4 me-4" style="z-index: 1000;">
+        <div class="d-flex flex-column">
+            <button class="btn btn-eco btn-lg rounded-circle mb-2 shadow" id="showCartSummaryBtn">
+                <i class="fas fa-shopping-cart"></i>
+            </button>
+            <div class="card shadow d-none" id="cartSummaryExtension" style="width: 300px;">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Cart Summary</h5>
+                        <button type="button" class="btn-close btn-close-white" id="hideCartSummaryBtn"></button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="miniCartItems" class="border-bottom">
+                        <p class="text-center text-muted py-3">Your cart is empty.</p>
+                    </div>
+                    <div class="p-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Items:</span>
+                            <span id="miniCartItemCount">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total:</span>
+                            <span id="miniCartTotal">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Carbon Footprint:</span>
+                            <span id="miniCartFootprint">0</span>
+                        </div>
+                        <button class="btn btn-sm btn-eco w-100" id="miniAnalyzeCartBtn">
+                            <i class="fas fa-leaf me-2"></i>Analyze Impact
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -731,6 +770,74 @@
                 bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
             });
         });
+
+        // Initialize the cart summary extension
+        document.getElementById('showCartSummaryBtn').addEventListener('click', function() {
+            document.getElementById('cartSummaryExtension').classList.remove('d-none');
+            this.classList.add('d-none');
+            updateMiniCartUI();
+        });
+
+        document.getElementById('hideCartSummaryBtn').addEventListener('click', function() {
+            document.getElementById('cartSummaryExtension').classList.add('d-none');
+            document.getElementById('showCartSummaryBtn').classList.remove('d-none');
+        });
+
+        document.getElementById('miniAnalyzeCartBtn').addEventListener('click', function() {
+            analyzeCart();
+        });
+
+        // Function to update the mini cart UI
+        function updateMiniCartUI() {
+            const miniCartItemsElement = document.getElementById('miniCartItems');
+            const miniCartItemCountElement = document.getElementById('miniCartItemCount');
+            const miniCartTotalElement = document.getElementById('miniCartTotal');
+            const miniCartFootprintElement = document.getElementById('miniCartFootprint');
+            
+            // Update mini cart counts
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            miniCartItemCountElement.textContent = totalItems;
+            
+            // Update mini cart items
+            if (cart.length === 0) {
+                miniCartItemsElement.innerHTML = '<p class="text-center text-muted py-3">Your cart is empty.</p>';
+            } else {
+                // Calculate totals
+                const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+                const totalCF = cart.reduce((total, item) => total + (item.cf_score * item.quantity), 0);
+                
+                // Update summary
+                miniCartTotalElement.textContent = '$' + totalPrice.toFixed(2);
+                miniCartFootprintElement.textContent = totalCF;
+                
+                // Generate mini cart items HTML
+                let miniCartItemsHTML = '';
+                
+                cart.forEach(item => {
+                    miniCartItemsHTML += `
+                        <div class="d-flex align-items-center p-2 border-bottom">
+                            <img src="${item.image}" alt="${item.name}" style="width: 40px; height: 40px; object-fit: contain;">
+                            <div class="ms-2">
+                                <div class="small fw-bold">${item.name}</div>
+                                <div class="d-flex justify-content-between">
+                                    <small>$${item.price.toFixed(2)} x ${item.quantity}</small>
+                                    <small class="ms-2 text-muted">CF: ${item.cf_score * item.quantity}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                miniCartItemsElement.innerHTML = miniCartItemsHTML;
+            }
+        }
+
+        // Update both cart UIs when cart changes
+        const originalUpdateCartUI = updateCartUI;
+        updateCartUI = function() {
+            originalUpdateCartUI();
+            updateMiniCartUI();
+        };
     </script>
 </body>
 </html> 

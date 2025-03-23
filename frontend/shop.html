@@ -136,6 +136,101 @@
             z-index: 10;
         }
         
+        /* Improved image styling */
+        .product-img-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(240,255,240,0.2));
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .product-img {
+            max-height: 160px;
+            max-width: 90%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+        }
+        
+        .product-card:hover .product-img {
+            transform: scale(1.08);
+        }
+        
+        .cart-item-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            padding: 5px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .analysis-item-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            padding: 8px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .analysis-item-img:hover {
+            transform: scale(1.1);
+        }
+        
+        .mini-cart-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 3px;
+        }
+        
+        .alternatives-img {
+            height: 100px;
+            object-fit: contain;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        
+        .alternatives-img:hover {
+            transform: scale(1.05);
+        }
+        
+        .current-item-img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            background-color: #fff9f0;
+            border-radius: 6px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            margin-right: 15px;
+        }
+        
+        .extension-item-img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            background-color: white;
+            border-radius: 4px;
+            padding: 2px;
+            margin-right: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
         .btn-eco {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
@@ -167,6 +262,46 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        /* Add image loading and fallback styles */
+        .img-loading {
+            position: relative;
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+        
+        .img-loading::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            from {
+                left: -100%;
+            }
+            to {
+                left: 100%;
+            }
+        }
+        
+        .product-img-error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            height: 160px;
+            width: 100%;
+            color: #6c757d;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
         }
     </style>
 </head>
@@ -332,7 +467,7 @@
                 category: "electronics.laptop",
                 brand: "dell",
                 price: 1299,
-                image: "https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/xps-notebooks/xps-13-9315/media-gallery/blue/laptop-xps-9315-t-blue-gallery-1.psd?fmt=png-alpha&pscan=auto&scl=1&wid=3319&hei=2405&qlt=100,1&resMode=sharp2&size=3319,2405&chrss=full&imwidth=5000",
+                image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlNmY3ZmYiLz48dGV4dCB4PSIyMDAiIHk9IjE1MCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjMDA2NmNjIj5EZWxsIFhQUyAxMyBMYXB0b3A8L3RleHQ+PC9zdmc+",
                 cf_score: 60,
                 description: "Powerful and eco-friendly laptop with efficient power management."
             },
@@ -342,7 +477,7 @@
                 category: "electronics.laptop",
                 brand: "hp",
                 price: 1099,
-                image: "https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c07960498.png",
+                image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmMGY3ZmYiLz48dGV4dCB4PSIyMDAiIHk9IjE1MCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjMDAzM2NjIj5IUCBFbnZ5IDEzPC90ZXh0Pjwvc3ZnPg==",
                 cf_score: 55,
                 description: "Energy-efficient laptop made with recycled materials."
             },
@@ -352,7 +487,7 @@
                 category: "electronics.smartphone",
                 brand: "samsung",
                 price: 899,
-                image: "https://images.samsung.com/is/image/samsung/p6pim/levant/sm-s901elvdmea/gallery/levant-galaxy-s22-s901-sm-s901elvdmea-531230889?$650_519_PNG$",
+                image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgMzAwIDQwMCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9IiNmZmY1ZTYiLz48dGV4dCB4PSIxNTAiIHk9IjIwMCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjZmY5OTAwIj5TYW1zdW5nIEdhbGF4eSBTMjI8L3RleHQ+PC9zdmc+",
                 cf_score: 60,
                 description: "Feature-rich smartphone with eco-friendly packaging."
             },
@@ -362,7 +497,7 @@
                 category: "electronics.smartphone",
                 brand: "google",
                 price: 699,
-                image: "https://lh3.googleusercontent.com/9XWpqwlxJVe7O-eVya09wkojFhobaBJTnHhZLr0OaLMH2yBiTYPBv3EFxLhQyC_FyaMG4NG7rbeFIpEsA-k3ZUNZBzRkPgzAAdY=rw-e365-w2880",
+                image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgMzAwIDQwMCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9IiNmNWY1ZjUiLz48dGV4dCB4PSIxNTAiIHk9IjIwMCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjNDI4NWY0Ij5Hb29nbGUgUGl4ZWwgNzwvdGV4dD48L3N2Zz4=",
                 cf_score: 55,
                 description: "Made with recycled aluminum with carbon-neutral manufacturing."
             },
@@ -372,7 +507,7 @@
                 category: "electronics.headphone",
                 brand: "sony",
                 price: 349,
-                image: "https://electronics.sony.com/image/6f5ab98c4b0749b7bf25e02fb01d1bc0?fmt=png-alpha&wid=720&hei=720",
+                image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmNWY1ZjUiLz48dGV4dCB4PSIyMDAiIHk9IjE1MCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjMDAwMDAwIj5Tb255IFdILTEwMDBYTTQ8L3RleHQ+PC9zdmc+",
                 cf_score: 60,
                 description: "Premium noise-canceling headphones with long-lasting battery."
             },
@@ -382,7 +517,7 @@
                 category: "electronics.headphone",
                 brand: "bose",
                 price: 329,
-                image: "https://assets.bose.com/content/dam/cloudassets/Bose_DAM/Web/consumer_electronics/global/products/headphones/qc45/product_silo_images/QC45_Black_1200x1022_hero.png/jcr:content/renditions/cq5dam.web.1280.1280.png",
+                image: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSIyMDAiIHk9IjE1MCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjMzMzMzMzIj5Cb3NlIFF1aWV0Q29tZm9ydCA0NTwvdGV4dD48L3N2Zz4=",
                 cf_score: 50,
                 description: "Comfortable headphones with recyclable packaging."
             }
@@ -402,7 +537,11 @@
                 productsHTML += `
                     <div class="col-md-4 mb-4">
                         <div class="card product-card h-100">
-                            <img src="${product.image}" class="card-img-top product-img" alt="${product.name}">
+                            <div class="product-img-container img-loading">
+                                <img src="${product.image}" class="product-img" alt="${product.name}" 
+                                     onload="this.parentNode.classList.remove('img-loading')" 
+                                     onerror="this.onerror=null; this.parentNode.classList.remove('img-loading'); this.parentNode.innerHTML='<div class=\'product-img-error\'><i class=\'fas fa-image me-2\'></i>${product.name}</div>'">
+                            </div>
                             <div class="card-body d-flex flex-column">
                                 <h5 class="card-title">${product.name}</h5>
                                 <p class="card-text text-muted mb-1">${product.brand.charAt(0).toUpperCase() + product.brand.slice(1)}</p>
@@ -420,6 +559,19 @@
             });
 
             productsContainer.innerHTML = productsHTML;
+            
+            // Preload images
+            setTimeout(() => {
+                preloadImages();
+            }, 100);
+        }
+        
+        // Function to preload all product images
+        function preloadImages() {
+            products.forEach(product => {
+                const img = new Image();
+                img.src = product.image;
+            });
         }
 
         // Function to add product to cart
@@ -481,7 +633,11 @@
                 cart.forEach(item => {
                     cartItemsHTML += `
                         <div class="d-flex align-items-center mb-3 p-2 border-bottom">
-                            <img src="${item.image}" alt="${item.name}" style="width: 60px; height: 60px; object-fit: contain;">
+                            <div class="img-loading" style="min-width: 60px; height: 60px;">
+                                <img src="${item.image}" alt="${item.name}" class="cart-item-img" 
+                                     onload="this.parentNode.classList.remove('img-loading')" 
+                                     onerror="this.onerror=null; this.parentNode.classList.remove('img-loading'); this.parentNode.innerHTML='<div class=\'d-flex align-items-center justify-content-center bg-light rounded\' style=\'width:60px;height:60px;\'><i class=\'fas fa-image text-muted\'></i></div>'">
+                            </div>
                             <div class="ms-3 flex-grow-1">
                                 <h6 class="mb-0">${item.name}</h6>
                                 <div class="small text-muted">$${item.price.toFixed(2)} x ${item.quantity}</div>
@@ -633,7 +789,7 @@
                                                     ${cart.map(item => `
                                                         <div class="d-flex p-3 border-bottom">
                                                             <div class="border-start border-4 ${item.cf_score > 65 ? 'border-danger' : item.cf_score > 55 ? 'border-warning' : 'border-success'}" style="margin-right: 10px;"></div>
-                                                            <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: contain; margin-right: 15px;">
+                                                            <img src="${item.image}" alt="${item.name}" class="analysis-item-img" style="margin-right: 15px;">
                                                             <div class="flex-grow-1">
                                                                 <h5>${item.name}</h5>
                                                                 <p class="mb-1">${item.brand.charAt(0).toUpperCase() + item.brand.slice(1)} | $${item.price.toFixed(2)} | Qty: ${item.quantity}</p>
@@ -801,7 +957,7 @@
                         <div class="modal-body">
                             <div class="alert alert-warning mb-4">
                                 <div class="d-flex align-items-center">
-                                    <img src="${worstItem.image}" alt="${worstItem.name}" style="width: 50px; height: 50px; object-fit: contain; margin-right: 15px;">
+                                    <img src="${worstItem.image}" alt="${worstItem.name}" class="current-item-img">
                                     <div>
                                         <h6 class="mb-1">Currently in your cart:</h6>
                                         <p class="mb-0">${worstItem.name} (CF: ${worstItem.cf_score})</p>
@@ -815,7 +971,7 @@
                                     <div class="col-md-4 mb-3">
                                         <div class="card h-100">
                                             <div class="card-body text-center">
-                                                <img src="${alt.image}" alt="${alt.name}" style="height: 100px; object-fit: contain;" class="mb-3">
+                                                <img src="${alt.image}" alt="${alt.name}" class="alternatives-img">
                                                 <h5 class="card-title">${alt.name}</h5>
                                                 <p class="card-text text-success mb-2">
                                                     <i class="fas fa-leaf me-1"></i>CF: ${alt.cf_score}
@@ -1017,6 +1173,19 @@
                     <h6>Shopping Cart Analysis</h6>
                     <p class="small text-muted mb-3">We've analyzed your cart on this website:</p>
                     
+                    <div class="d-flex flex-column mb-3">
+                        ${items.slice(0, 3).map(item => `
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="${item.image}" alt="${item.name}" class="extension-item-img">
+                                <div class="small">
+                                    ${item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name}
+                                    <span class="text-${item.cf_score > 65 ? 'danger' : item.cf_score > 55 ? 'warning' : 'success'} ms-1">(CF: ${item.cf_score})</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${items.length > 3 ? `<div class="small text-muted text-center">+ ${items.length - 3} more items</div>` : ''}
+                    </div>
+                    
                     <div class="d-flex justify-content-between mb-2">
                         <span>Items analyzed:</span>
                         <span class="fw-bold">${items.length}</span>
@@ -1163,7 +1332,7 @@
                 cart.forEach(item => {
                     miniCartItemsHTML += `
                         <div class="d-flex align-items-center p-2 border-bottom">
-                            <img src="${item.image}" alt="${item.name}" style="width: 40px; height: 40px; object-fit: contain;">
+                            <img src="${item.image}" alt="${item.name}" class="mini-cart-img">
                             <div class="ms-2">
                                 <div class="small fw-bold">${item.name}</div>
                                 <div class="d-flex justify-content-between">

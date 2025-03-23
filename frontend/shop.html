@@ -18,6 +18,79 @@
             --success-color: #27ae60;
         }
         
+        /* Extension-like UI elements */
+        .extension-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+            background-color: white;
+            overflow: hidden;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .extension-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .extension-logo {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .extension-content {
+            padding: 15px;
+        }
+        
+        .extension-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .eco-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .eco-indicator-low {
+            background-color: var(--success-color);
+        }
+        
+        .eco-indicator-medium {
+            background-color: var(--warning-color);
+        }
+        
+        .eco-indicator-high {
+            background-color: var(--danger-color);
+        }
+        
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f8f9fa;
@@ -497,182 +570,226 @@
                 return;
             }
             
-            // Close the cart modal if it's open
-            const cartModal = document.getElementById('cartModal');
-            if (cartModal) {
-                const bsCartModal = bootstrap.Modal.getInstance(cartModal);
-                if (bsCartModal) {
-                    bsCartModal.hide();
+            try {
+                // Close the cart modal if it's open
+                const cartModal = document.getElementById('cartModal');
+                if (cartModal) {
+                    const bsCartModal = bootstrap.Modal.getInstance(cartModal);
+                    if (bsCartModal) {
+                        bsCartModal.hide();
+                    }
                 }
-            }
-            
-            console.log('Creating analysis modal with cart items:', cart);
-            
-            // Calculate totals and averages
-            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-            const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-            const totalCF = cart.reduce((total, item) => total + (item.cf_score * item.quantity), 0);
-            const avgCF = Math.round(totalCF / totalItems);
-            
-            // Get item with highest CF score
-            const worstItem = [...cart].sort((a, b) => b.cf_score - a.cf_score)[0];
-            console.log('Worst item identified:', worstItem);
-            
-            // Find better alternative
-            const alternatives = products.filter(p => 
-                p.category === worstItem.category && 
-                p.brand !== worstItem.brand && 
-                p.cf_score < worstItem.cf_score
-            ).sort((a, b) => a.cf_score - b.cf_score);
-            console.log('Alternatives found:', alternatives);
-            
-            // Create cart analysis modal with new UI
-            const analysisModal = new bootstrap.Modal(document.createElement('div'));
-            const modalElement = analysisModal._element;
-            modalElement.className = 'modal fade';
-            modalElement.innerHTML = `
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-shopping-cart me-2"></i>Your Shopping Cart Analysis
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body p-0">
-                            <div class="container-fluid py-4">
-                                <h3 class="text-center mb-4">Your Shopping Cart Analysis</h3>
-                                <p class="text-center text-muted mb-5">We analyzed your recent shopping cart items to calculate their environmental impact</p>
-                                
-                                <div class="row">
-                                    <div class="col-md-7">
-                                        <div class="card h-100">
-                                            <div class="card-header bg-success text-white">
-                                                <h5 class="mb-0">
-                                                    <i class="fas fa-shopping-cart me-2"></i>Shopping Cart Items
-                                                </h5>
-                                            </div>
-                                            <div class="card-body bg-white p-0">
-                                                ${cart.map(item => `
-                                                    <div class="d-flex p-3 border-bottom">
-                                                        <div class="border-start border-4 ${item.cf_score > 65 ? 'border-danger' : item.cf_score > 55 ? 'border-warning' : 'border-success'}" style="margin-right: 10px;"></div>
-                                                        <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: contain; margin-right: 15px;">
-                                                        <div class="flex-grow-1">
-                                                            <h5>${item.name}</h5>
-                                                            <p class="mb-1">${item.brand.charAt(0).toUpperCase() + item.brand.slice(1)} | $${item.price.toFixed(2)} | Qty: ${item.quantity}</p>
-                                                        </div>
-                                                        <div>
-                                                            <span class="badge ${item.cf_score > 65 ? 'bg-danger' : item.cf_score > 55 ? 'bg-warning' : 'bg-success'} px-3 py-2">
-                                                                CF: ${item.cf_score}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        </div>
-                                    </div>
+                
+                console.log('Creating analysis modal with cart items:', cart);
+                
+                // Calculate totals and averages
+                const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+                const totalPrice = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+                const totalCF = cart.reduce((total, item) => total + (item.cf_score * item.quantity), 0);
+                const avgCF = Math.round(totalCF / totalItems);
+                
+                // Get item with highest CF score
+                const worstItem = [...cart].sort((a, b) => b.cf_score - a.cf_score)[0];
+                console.log('Worst item identified:', worstItem);
+                
+                // Find better alternative
+                const alternatives = products.filter(p => 
+                    p.category === worstItem.category && 
+                    p.brand !== worstItem.brand && 
+                    p.cf_score < worstItem.cf_score
+                ).sort((a, b) => a.cf_score - b.cf_score);
+                console.log('Alternatives found:', alternatives);
+                
+                // Create cart analysis modal with new UI
+                const analysisModal = document.createElement('div');
+                analysisModal.className = 'modal fade';
+                analysisModal.id = 'analysisModal';
+                analysisModal.setAttribute('tabindex', '-1');
+                analysisModal.setAttribute('aria-hidden', 'true');
+                
+                analysisModal.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-shopping-cart me-2"></i>Your Shopping Cart Analysis
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="container-fluid py-4">
+                                    <h3 class="text-center mb-4">Your Shopping Cart Analysis</h3>
+                                    <p class="text-center text-muted mb-5">We analyzed your recent shopping cart items to calculate their environmental impact</p>
                                     
-                                    <div class="col-md-5">
-                                        <div class="card mb-4">
-                                            <div class="card-header bg-primary text-white">
-                                                <h5 class="mb-0">
-                                                    <i class="fas fa-chart-pie me-2"></i>Cart Summary
-                                                </h5>
-                                            </div>
-                                            <div class="card-body bg-white">
-                                                <div class="d-flex justify-content-between mb-3">
-                                                    <span>Total Items:</span>
-                                                    <span class="fw-bold">${totalItems}</span>
+                                    <div class="row">
+                                        <div class="col-md-7">
+                                            <div class="card h-100">
+                                                <div class="card-header bg-success text-white">
+                                                    <h5 class="mb-0">
+                                                        <i class="fas fa-shopping-cart me-2"></i>Shopping Cart Items
+                                                    </h5>
                                                 </div>
-                                                <div class="d-flex justify-content-between mb-3">
-                                                    <span>Average CF Score:</span>
-                                                    <span class="fw-bold">${avgCF}</span>
-                                                </div>
-                                                <div class="d-flex justify-content-between mb-4">
-                                                    <span>Total CF Impact:</span>
-                                                    <span class="fw-bold">${totalCF}</span>
-                                                </div>
-                                                
-                                                <div class="progress" style="height: 10px;">
-                                                    <div class="progress-bar bg-warning" role="progressbar" 
-                                                        style="width: ${Math.min(totalCF / 3, 100)}%"></div>
+                                                <div class="card-body bg-white p-0">
+                                                    ${cart.map(item => `
+                                                        <div class="d-flex p-3 border-bottom">
+                                                            <div class="border-start border-4 ${item.cf_score > 65 ? 'border-danger' : item.cf_score > 55 ? 'border-warning' : 'border-success'}" style="margin-right: 10px;"></div>
+                                                            <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: contain; margin-right: 15px;">
+                                                            <div class="flex-grow-1">
+                                                                <h5>${item.name}</h5>
+                                                                <p class="mb-1">${item.brand.charAt(0).toUpperCase() + item.brand.slice(1)} | $${item.price.toFixed(2)} | Qty: ${item.quantity}</p>
+                                                            </div>
+                                                            <div>
+                                                                <span class="badge ${item.cf_score > 65 ? 'bg-danger' : item.cf_score > 55 ? 'bg-warning' : 'bg-success'} px-3 py-2">
+                                                                    CF: ${item.cf_score}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    `).join('')}
                                                 </div>
                                             </div>
                                         </div>
                                         
-                                        <div class="card">
-                                            <div class="card-header bg-success text-white">
-                                                <h5 class="mb-0">
-                                                    <i class="fas fa-leaf me-2"></i>Sustainability Tips
-                                                </h5>
+                                        <div class="col-md-5">
+                                            <div class="card mb-4">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h5 class="mb-0">
+                                                        <i class="fas fa-chart-pie me-2"></i>Cart Summary
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body bg-white">
+                                                    <div class="d-flex justify-content-between mb-3">
+                                                        <span>Total Items:</span>
+                                                        <span class="fw-bold">${totalItems}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-3">
+                                                        <span>Average CF Score:</span>
+                                                        <span class="fw-bold">${avgCF}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-4">
+                                                        <span>Total CF Impact:</span>
+                                                        <span class="fw-bold">${totalCF}</span>
+                                                    </div>
+                                                    
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                                            style="width: ${Math.min(totalCF / 3, 100)}%"></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="card-body bg-white">
-                                                ${worstItem ? `
-                                                    <div class="alert alert-warning">
-                                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                                        <strong>${worstItem.name}</strong> has a high environmental impact (CF: ${worstItem.cf_score}).
+                                            
+                                            <div class="card">
+                                                <div class="card-header bg-success text-white">
+                                                    <h5 class="mb-0">
+                                                        <i class="fas fa-leaf me-2"></i>Sustainability Tips
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body bg-white">
+                                                    ${worstItem ? `
+                                                        <div class="alert alert-warning">
+                                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                                            <strong>${worstItem.name}</strong> has a high environmental impact (CF: ${worstItem.cf_score}).
+                                                        </div>
+                                                    ` : ''}
+                                                    
+                                                    ${alternatives.length > 0 ? `
+                                                        <div class="alert alert-success">
+                                                            <i class="fas fa-lightbulb me-2"></i>
+                                                            Consider <strong>${alternatives[0].brand.charAt(0).toUpperCase() + alternatives[0].brand.slice(1)}</strong> instead, with a ${worstItem.cf_score - alternatives[0].cf_score} point improvement in CF score.
+                                                        </div>
+                                                    ` : ''}
+                                                    
+                                                    <div class="d-grid">
+                                                        <button class="btn btn-outline-success mt-3" id="findAlternativesBtn">
+                                                            <i class="fas fa-sync-alt me-2"></i>Find Eco Alternatives
+                                                        </button>
                                                     </div>
-                                                ` : ''}
-                                                
-                                                ${alternatives.length > 0 ? `
-                                                    <div class="alert alert-success">
-                                                        <i class="fas fa-lightbulb me-2"></i>
-                                                        Consider <strong>${alternatives[0].brand.charAt(0).toUpperCase() + alternatives[0].brand.slice(1)}</strong> instead, with a ${worstItem.cf_score - alternatives[0].cf_score} point improvement in CF score.
-                                                    </div>
-                                                ` : ''}
-                                                
-                                                <div class="d-grid">
-                                                    <button class="btn btn-outline-success mt-3" id="findAlternativesBtn">
-                                                        <i class="fas fa-sync-alt me-2"></i>Find Eco Alternatives
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                ${alternatives.length > 0 ? `
+                                    <button type="button" class="btn btn-success" onclick="swapCartItem(${worstItem.id}, ${alternatives[0].id})">
+                                        <i class="fas fa-exchange-alt me-2"></i>Swap to Eco-Friendly Alternative
+                                    </button>
+                                ` : ''}
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            ${alternatives.length > 0 ? `
-                                <button type="button" class="btn btn-success" onclick="swapCartItem(${worstItem.id}, ${alternatives[0].id})">
-                                    <i class="fas fa-exchange-alt me-2"></i>Swap to Eco-Friendly Alternative
-                                </button>
-                            ` : ''}
-                        </div>
+                    </div>
+                `;
+                
+                // Add to document
+                document.body.appendChild(analysisModal);
+                
+                // Show the modal
+                const bsAnalysisModal = new bootstrap.Modal(analysisModal);
+                bsAnalysisModal.show();
+                
+                // Add event listener for find alternatives button
+                document.getElementById('findAlternativesBtn')?.addEventListener('click', function() {
+                    // Close current modal
+                    bsAnalysisModal.hide();
+                    
+                    // Show alternatives in a new modal
+                    setTimeout(() => {
+                        showAlternativesModal(worstItem, alternatives);
+                    }, 500);
+                });
+                
+                // Handle cleanup when modal is closed
+                analysisModal.addEventListener('hidden.bs.modal', function () {
+                    analysisModal.remove();
+                });
+                
+                // Add browser extension-like notification
+                showExtensionNotification(`Analyzed ${totalItems} items in your cart with a total carbon footprint of ${totalCF}`);
+                
+            } catch (error) {
+                console.error('Error in analyzeCart:', error);
+                showToast('An error occurred while analyzing your cart. Please try again.');
+            }
+        }
+
+        // Function to show a browser extension-like notification
+        function showExtensionNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'position-fixed top-0 end-0 p-3';
+            notification.style.zIndex = '1090';
+            notification.innerHTML = `
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-success text-white">
+                        <i class="fas fa-leaf me-2"></i>
+                        <strong class="me-auto">EcoSmart Extension</strong>
+                        <small>Just now</small>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
                     </div>
                 </div>
             `;
             
-            // Add to document and show
-            document.body.appendChild(modalElement);
-            analysisModal.show();
+            document.body.appendChild(notification);
             
-            // Add event listener for find alternatives button
-            modalElement.querySelector('#findAlternativesBtn')?.addEventListener('click', function() {
-                // Close current modal
-                analysisModal.hide();
-                
-                // Show alternatives in a new modal
-                setTimeout(() => {
-                    showAlternativesModal(worstItem, alternatives);
-                }, 500);
-            });
-            
-            // Handle cleanup when modal is closed
-            modalElement.addEventListener('hidden.bs.modal', function () {
-                modalElement.remove();
-            });
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
 
         // Function to show alternatives modal
         function showAlternativesModal(worstItem, alternatives) {
             if (!worstItem || alternatives.length === 0) return;
             
-            const alternativesModal = new bootstrap.Modal(document.createElement('div'));
-            const modalElement = alternativesModal._element;
-            modalElement.className = 'modal fade';
-            modalElement.innerHTML = `
+            const alternativesModal = document.createElement('div');
+            alternativesModal.className = 'modal fade';
+            alternativesModal.id = 'alternativesModal';
+            alternativesModal.setAttribute('tabindex', '-1');
+            alternativesModal.setAttribute('aria-hidden', 'true');
+            
+            alternativesModal.innerHTML = `
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header bg-success text-white">
@@ -729,13 +846,16 @@
                 </div>
             `;
             
-            // Add to document and show
-            document.body.appendChild(modalElement);
-            alternativesModal.show();
+            // Add to document
+            document.body.appendChild(alternativesModal);
+            
+            // Show the modal
+            const bsAlternativesModal = new bootstrap.Modal(alternativesModal);
+            bsAlternativesModal.show();
             
             // Handle cleanup when modal is closed
-            modalElement.addEventListener('hidden.bs.modal', function () {
-                modalElement.remove();
+            alternativesModal.addEventListener('hidden.bs.modal', function () {
+                alternativesModal.remove();
             });
         }
 
@@ -875,6 +995,92 @@
             });
         }
 
+        // Function to simulate browser extension popup
+        function showExtensionPopup(items, totalCF) {
+            const popup = document.createElement('div');
+            popup.className = 'extension-popup';
+            popup.innerHTML = `
+                <div class="extension-header">
+                    <div class="extension-logo">
+                        <i class="fas fa-leaf me-2"></i> EcoSmart Browser Extension
+                    </div>
+                    <button type="button" class="btn-close btn-close-white btn-sm" id="closeExtensionPopup"></button>
+                </div>
+                <div class="extension-content">
+                    <div class="alert alert-${totalCF > 150 ? 'danger' : totalCF > 100 ? 'warning' : 'success'} mb-3">
+                        <i class="fas fa-${totalCF > 150 ? 'exclamation-circle' : totalCF > 100 ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+                        ${totalCF > 150 ? 'High environmental impact detected!' : 
+                           totalCF > 100 ? 'Moderate environmental impact detected' : 
+                           'Good job! Your cart has a relatively low environmental impact.'}
+                    </div>
+                    
+                    <h6>Shopping Cart Analysis</h6>
+                    <p class="small text-muted mb-3">We've analyzed your cart on this website:</p>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Items analyzed:</span>
+                        <span class="fw-bold">${items.length}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total carbon footprint:</span>
+                        <span class="fw-bold">${totalCF} points</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Environmental impact:</span>
+                        <span class="fw-bold text-${totalCF > 150 ? 'danger' : totalCF > 100 ? 'warning' : 'success'}">
+                            ${totalCF > 150 ? 'High' : totalCF > 100 ? 'Medium' : 'Low'}
+                        </span>
+                    </div>
+                    
+                    <div class="progress mb-4" style="height: 10px;">
+                        <div class="progress-bar bg-${totalCF > 150 ? 'danger' : totalCF > 100 ? 'warning' : 'success'}" 
+                             role="progressbar" style="width: ${Math.min(totalCF / 3, 100)}%"></div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-sm btn-success w-100" id="extensionAnalyzeButton">
+                            <i class="fas fa-search-plus me-2"></i>View Detailed Analysis
+                        </button>
+                    </div>
+                </div>
+                <div class="extension-footer">
+                    <div class="small text-muted">
+                        <span class="eco-indicator eco-indicator-low"></span> Low Impact
+                        <span class="eco-indicator eco-indicator-medium ms-2"></span> Medium Impact
+                        <span class="eco-indicator eco-indicator-high ms-2"></span> High Impact
+                    </div>
+                    <div class="small">
+                        <a href="#" class="text-decoration-none">Settings</a>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            // Handle close button
+            document.getElementById('closeExtensionPopup').addEventListener('click', function() {
+                popup.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => popup.remove(), 300);
+            });
+            
+            // Handle analyze button
+            document.getElementById('extensionAnalyzeButton').addEventListener('click', function() {
+                popup.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => popup.remove(), 300);
+                
+                // Show the analysis modal
+                analyzeCart();
+            });
+            
+            // Auto-close after 15 seconds
+            setTimeout(() => {
+                if (document.body.contains(popup)) {
+                    popup.style.animation = 'slideIn 0.3s ease-out reverse';
+                    setTimeout(() => popup.remove(), 300);
+                }
+            }, 15000);
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             // Display products
@@ -888,6 +1094,14 @@
             if (savedCart) {
                 cart = JSON.parse(savedCart);
                 updateCartUI();
+                
+                // Show extension popup after the page loads (simulating extension behavior)
+                setTimeout(() => {
+                    if (cart.length > 0) {
+                        const totalCF = cart.reduce((total, item) => total + (item.cf_score * item.quantity), 0);
+                        showExtensionPopup(cart, totalCF);
+                    }
+                }, 2000);
             }
             
             // Set up cart button

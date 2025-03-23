@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import time  # Add time module for sleep
 from typing import Dict, List, Any, Optional
 
 # Try to import Google Generative AI
@@ -37,6 +38,7 @@ class GeminiInsightsGenerator:
         self.model_name = model_name
         self.api_key = api_key
         self.genai_available = GENAI_AVAILABLE
+        self.request_count = 0  # Add counter for rate limiting
         
         # Mock data for user - in a real application, this would come from a database
         self.mock_user_data = {
@@ -153,6 +155,12 @@ Keep your response focused and concise, with each section around 2-3 sentences.
             alternatives = []
             
         model = self.get_model()
+        
+        # Rate limiting - sleep after every 15 requests
+        self.request_count += 1
+        if self.request_count % 15 == 0:
+            print("Rate limiting: sleeping for 1 second after 15 requests")
+            time.sleep(1)  # Sleep for 1 second after every 15 requests
         
         if not model:
             # Return mock data if model isn't available

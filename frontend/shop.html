@@ -325,24 +325,10 @@
             let productsHTML = '';
 
             products.forEach(product => {
-                // Determine badge color based on CF score
-                let badgeClass = 'bg-success';
-                let categoryText = 'Low Impact';
-                
-                if (product.cf_score >= 70) {
-                    badgeClass = 'bg-danger';
-                    categoryText = 'High Impact';
-                } else if (product.cf_score >= 40) {
-                    badgeClass = 'bg-warning text-dark';
-                    categoryText = 'Medium Impact';
-                }
-
+                // Remove the badge and category text based on CF score
                 productsHTML += `
                     <div class="col-md-4 mb-4">
                         <div class="card product-card h-100">
-                            <span class="eco-badge badge ${badgeClass}" title="Carbon Footprint Score">
-                                CF: ${product.cf_score}
-                            </span>
                             <img src="${product.image}" class="card-img-top product-img" alt="${product.name}">
                             <div class="card-body d-flex flex-column">
                                 <h5 class="card-title">${product.name}</h5>

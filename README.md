@@ -1,39 +1,54 @@
 # EcoSmart Purchase Advisor
 
-A sustainability-focused hackathon project that calculates the carbon footprint of products and provides personalized recommendations for more sustainable shopping choices.
+A sustainability-focused project that calculates the carbon footprint of products and provides personalized recommendations for more eco-friendly shopping choices.
 
 ## Features
 
 - Carbon footprint calculation for various product categories
-- Personalized recommendations using Google's Gemini AI
-- Brand sustainability rankings
-- Interactive web UI for easy access
-- Processing of both small and large datasets
+- Category-based eco-friendly product recommendations
+- Interactive shopping interface with environmental impact analysis
+- Browser extension-like experience for analyzing cart sustainability
+- User sustainability streak tracking and rewards
+- Real-time product swapping with eco-friendly alternatives
+- Image handling with graceful fallbacks
 
 ## Technology Stack
 
+- Frontend: HTML, CSS, JavaScript with Bootstrap 5
 - Backend: Python with FastAPI
-- Frontend: HTML, CSS, JavaScript with Bootstrap
 - AI: Google Gemini API for insights generation
 - Data Analysis: Pandas and NumPy
+- Vector Database: ChromaDB for product similarity search
 
 ## Getting Started
 
 1. Clone the repository
 2. Install dependencies: `pip install -r requirements.txt`
 3. Run the API server: `python main.py`
-4. Open `frontend/index.html` in your browser
+4. Open `frontend/shop.html` in your browser
 
-## Data Processing
+## How It Works
 
-The project includes two main datasets:
-- `data.csv`: A small dataset with pre-defined sustainability metrics
-- `df_2.csv`: A larger dataset where sustainability metrics are generated
+### Shopping Interface
+The shopping interface allows users to:
+- Browse products with clear sustainability information
+- Add products to cart
+- View the environmental impact of their cart
+- Get eco-friendly product recommendations from the same category
+- Swap to eco-friendly alternatives with a single click
 
-To process the larger dataset, run:
-```
-python process_df2.py
-```
+### Environmental Impact Analysis
+- Each product has a Carbon Footprint (CF) score
+- The system analyzes the cart to find items with high CF scores
+- Category-based alternatives with lower CF scores are suggested
+- Swapping to eco-friendly alternatives increases the user's sustainability streak
+
+### Browser Extension Experience
+The interface simulates a browser extension that:
+- Analyzes the user's cart automatically
+- Provides a summary of the environmental impact
+- Offers detailed analysis with recommendations
+- Shows sustainability tips
 
 ## Architecture
 
@@ -42,23 +57,16 @@ python process_df2.py
 - `ml_classifier.py` - Machine learning model for CF classification
 - `genai_api.py` - Gemini AI integration for personalized recommendations
 - `app.py` - FastAPI backend server
-- `frontend/index.html` - Simple web interface
+- `frontend/shop.html` - Interactive shopping interface
 
-## Input Format
+## Data Processing Flow
 
-The frontend expects:
-- UserID
-- Product
-- Brand
-- Time of Purchase
-
-## Output
-
-The Gemini AI API provides:
-- User's CF score from purchase history
-- User's CF category
-- Product and brand CF category
-- Recommendations for alternative products/brands with lower CF
+1. Product data is loaded with carbon footprint scores
+2. Machine learning model (Random Forest) helps classify items
+3. User cart items are analyzed for their environmental impact
+4. ChromaDB finds similar but more eco-friendly alternatives
+5. Gemini AI helps generate natural language recommendations
+6. Results are displayed in an interactive interface
 
 ## Future Enhancements
 
@@ -66,4 +74,5 @@ The Gemini AI API provides:
 - Mobile app for real-time CF calculation while shopping
 - Expanded dataset with more product categories
 - Carbon offset suggestions
-- Community features for comparing and tracking CF improvements 
+- Community features for comparing and tracking CF improvements
+- Full-featured browser extension implementation 
